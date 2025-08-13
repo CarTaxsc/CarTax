@@ -877,6 +877,24 @@ html.dark #contact #consent-group span, html.dark #contact #marketing-group span
 }
 </style>
 
+    <!-- Additional responsive adjustment to prevent the hero statistics from overlapping the buttons on medium-sized screens (e.g. laptops).  
+         At widths below 1400px the absolute positioning of the hero statistics caused them to float on top of the "Nasze usługi" and 
+         "Skontaktuj się" buttons.  By resetting the positioning to static the stats block flows below the description and buttons, and 
+         adding a margin provides breathing room. -->
+    <style>
+    @media (max-width: 1400px) {
+        .hero-stats {
+            position: static;
+            transform: none;
+            left: auto;
+            right: auto;
+            bottom: auto;
+            margin-top: 2rem;
+            justify-content: center;
+        }
+    }
+    </style>
+
     <style>
     /* === Dark mode toggle button === */
     .theme-btn{
@@ -1323,9 +1341,13 @@ html.dark #booking p{
             <div class="container">
                 <div class="about-content">
                     <div class="about-text">
-                        <h2>CarTax - Twój Partner w Elektronice Samochodowej</h2>
-                        <p id="company-description-home">CarTax to specjalistyczny warsztat elektroniczny w Gdańsku oferujący kompleksowe usługi w zakresie elektroniki pojazdowej, diagnostyki, programowania sterowników, instalacji taksometrów oraz obsługi kas fiskalnych dla taksówek i nie tylko.</p>
-                        <p>Nasza firma została założona w 2014 roku i od tego czasu świadczymy ekspertowskie usługi w dziedzinie elektroniki taksówkowej, urządzeń fiskalnych oraz diagnostyki pojazdów.</p>
+                        <!-- The following elements comprise the hero/about headline and description on the homepage.  They are given
+                             unique IDs so their content can be updated dynamically from the admin panel without affecting the
+                             company description used elsewhere in the site.  Do not change these IDs unless you also update
+                             the corresponding JavaScript selectors. -->
+                        <h2 id="home-title">CarTax - Twój Partner w Elektronice Samochodowej</h2>
+                        <p id="home-desc1">CarTax to specjalistyczny warsztat elektroniczny w Gdańsku oferujący kompleksowe usługi w zakresie elektroniki pojazdowej, diagnostyki, programowania sterowników, instalacji taksometrów oraz obsługi kas fiskalnych dla taksówek i nie tylko.</p>
+                        <p id="home-desc2">Nasza firma została założona w 2014 roku i od tego czasu świadczymy ekspertowskie usługi w dziedzinie elektroniki taksówkowej, urządzeń fiskalnych oraz diagnostyki pojazdów.</p>
                         <a class="btn" onclick="showPage('about')">Dowiedz się więcej</a>
                     </div>
                     <div class="about-image">
@@ -1527,6 +1549,8 @@ html.dark #booking p{
                 <button class="active" onclick="showAdminSection('services-admin')">Zarządzaj Usługami</button>
                 <button onclick="showAdminSection('company-admin')">Dane Firmy</button>
                 <button onclick="showAdminSection('content-admin')">Edytuj Treść</button>
+                <!-- Nowy przycisk umożliwiający edycję tekstów na stronie głównej -->
+                <button onclick="showAdminSection('homepage-admin')">Edycja Strony Startowej</button>
                 <button onclick="showAdminSection('firebase-admin')">Konfiguracja Firebase</button>
                 <button onclick="showAdminSection('password-admin')">Zmień Hasło</button>
                 <!-- Nowy przycisk do zarządzania rezerwacją -->
@@ -1737,6 +1761,26 @@ html.dark #booking p{
                     <button type="submit" class="btn">💾 Zapisz Treść</button>
                 </form>
             </div>
+
+            <!-- Homepage Editing -->
+            <div id="homepage-admin" class="admin-section">
+                <h3>Edycja Strony Startowej</h3>
+                <form id="homepage-form" class="form-section">
+                    <div class="form-group">
+                        <label for="home-title-input">Nagłówek:</label>
+                        <input type="text" id="home-title-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="home-desc1-input">Opis – pierwszy akapit:</label>
+                        <textarea id="home-desc1-input" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="home-desc2-input">Opis – drugi akapit:</label>
+                        <textarea id="home-desc2-input" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn">💾 Zapisz Stronę Startową</button>
+                </form>
+            </div>
             <!-- Firebase Configuration -->
             <div id="firebase-admin" class="admin-section">
                 <h3>Konfiguracja Firebase</h3>
@@ -1941,6 +1985,17 @@ html.dark #booking p{
                 "Szybki czas realizacji",
                 "Gwarancję na wykonane usługi"
             ]
+        };
+
+        // Content for the hero/about section on the homepage.  This allows the administrator to
+        // edit the main headline and two descriptive paragraphs on the landing page without
+        // modifying other company descriptions.  These defaults match the original hard‑coded
+        // text in the HTML.  When present in saved data the values stored there will override
+        // these defaults.
+        let homepageContent = {
+            title: "CarTax - Twój Partner w Elektronice Samochodowej",
+            desc1: "CarTax to specjalistyczny warsztat elektroniczny w Gdańsku oferujący kompleksowe usługi w zakresie elektroniki pojazdowej, diagnostyki, programowania sterowników, instalacji taksometrów oraz obsługi kas fiskalnych dla taksówek i nie tylko.",
+            desc2: "Nasza firma została założona w 2014 roku i od tego czasu świadczymy ekspertowskie usługi w dziedzinie elektroniki taksówkowej, urządzeń fiskalnych oraz diagnostyki pojazdów."
         };
         let adminPasswordHash = hashPassword("haslo");
         let isLoggedIn = false;
@@ -2412,6 +2467,9 @@ let bookingColor = localStorage.getItem('bookingColor') || '#ffd700';
                 loadCompanyForm();
             } else if (sectionId === 'content-admin') {
                 loadContentForm();
+            } else if (sectionId === 'homepage-admin') {
+                // Wczytaj dane strony głównej do formularza edycji
+                loadHomepageForm();
             } else if (sectionId === 'firebase-admin') {
                 firebaseManager.updateFirebaseStatus();
             }
@@ -2625,11 +2683,10 @@ let bookingColor = localStorage.getItem('bookingColor') || '#ffd700';
                     </div>
                 `;
             }
-            // Update company description on home page
-            const companyDescHome = document.getElementById('company-description-home');
-            if (companyDescHome) {
-                companyDescHome.textContent = companyInfo.description;
-            }
+            // No longer update the home page headline/description from companyInfo.description.
+            // The homepage text is now controlled by the `homepageContent` object and updated via
+            // `updateHomeContent()`.  This prevents the company description from overwriting custom
+            // homepage copy.
             // Update logo display
             updateLogoDisplay();
             // Update body background color
@@ -2654,6 +2711,27 @@ let bookingColor = localStorage.getItem('bookingColor') || '#ffd700';
                 `;
             }
         }
+
+        // Aktualizuje zawartość nagłówka i opisów na stronie głównej na podstawie obiektu `homepageContent`.
+        // Dzięki temu administrator może zmieniać te teksty bez ingerencji w pozostałe opisy firmy.
+        function updateHomeContent() {
+            const titleEl = document.getElementById('home-title');
+            const desc1El = document.getElementById('home-desc1');
+            const desc2El = document.getElementById('home-desc2');
+            if (titleEl) titleEl.textContent = homepageContent.title;
+            if (desc1El) desc1El.textContent = homepageContent.desc1;
+            if (desc2El) desc2El.textContent = homepageContent.desc2;
+        }
+
+        // Ładuje bieżące wartości do formularza edycji strony głównej w panelu administratora.
+        function loadHomepageForm() {
+            const titleInput = document.getElementById('home-title-input');
+            const desc1Input = document.getElementById('home-desc1-input');
+            const desc2Input = document.getElementById('home-desc2-input');
+            if (titleInput) titleInput.value = homepageContent.title || '';
+            if (desc1Input) desc1Input.value = homepageContent.desc1 || '';
+            if (desc2Input) desc2Input.value = homepageContent.desc2 || '';
+        }
         function logout() {
             isLoggedIn = false;
             showPage('home');
@@ -2675,7 +2753,9 @@ let bookingColor = localStorage.getItem('bookingColor') || '#ffd700';
                 adminPasswordHash: adminPasswordHash, // Save hashed password
                 companyInfo: companyInfo,
                 aboutContent: aboutContent,
-                firebaseConfig: firebaseConfig
+                firebaseConfig: firebaseConfig,
+                // Zapisz również zawartość strony głównej, aby administrator mógł ją edytować i przywracać
+                homepageContent: homepageContent
             };
             // Include booking settings in saved data
             try { data.booking = { enabled: bookingEnabled, color: bookingColor }; } catch(_) {}
@@ -2712,12 +2792,16 @@ let bookingColor = localStorage.getItem('bookingColor') || '#ffd700';
                     }
                     if (data.companyInfo) companyInfo = data.companyInfo;
                     if (data.aboutContent) aboutContent = data.aboutContent;
+                    // Załaduj edytowaną zawartość strony głównej, jeśli istnieje w bazie
+                    if (data.homepageContent) homepageContent = data.homepageContent;
                 } else {
                     // If no data, set default hash
                     adminPasswordHash = hashPassword("haslo");
                 }
                 updateWebsiteContent();
                 updateAboutContent();
+                // Aktualizuj również teksty na stronie głównej na podstawie zapisanych danych
+                updateHomeContent();
                 try { updateBookingVisibility(); } catch(_) {}
                 const __bc = (typeof bookingColor !== 'undefined' && bookingColor) ? bookingColor : (localStorage.getItem('bookingColor') || '#ffd700');
                 try { const __inp = document.getElementById('booking-color'); if (__inp) __inp.value = __bc; } catch(_) {}
@@ -2737,6 +2821,8 @@ let bookingColor = localStorage.getItem('bookingColor') || '#ffd700';
             await loadData();
             loadServices();
             updateAboutContent();
+            // Po załadowaniu danych wczytaj teksty strony głównej
+            updateHomeContent();
        
             
             // Initialize EmailJS for contact form
@@ -2896,6 +2982,20 @@ let bookingColor = localStorage.getItem('bookingColor') || '#ffd700';
                 updateAboutContent();
                 alert('✅ Treść została zaktualizowana!');
             });
+
+            // Homepage form
+            const homepageForm = document.getElementById('homepage-form');
+            if (homepageForm) {
+                homepageForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    homepageContent.title = document.getElementById('home-title-input').value;
+                    homepageContent.desc1 = document.getElementById('home-desc1-input').value;
+                    homepageContent.desc2 = document.getElementById('home-desc2-input').value;
+                    saveData();
+                    updateHomeContent();
+                    alert('✅ Strona startowa została zaktualizowana!');
+                });
+            }
        
             // Password change form
             document.getElementById('password-change-form').addEventListener('submit', function(e) {
@@ -3094,10 +3194,13 @@ async function refreshBookingIframe() {
                 return false;
               }
             }
-            // Hook forms
-            Array.from(document.querySelectorAll('form')).forEach(function(f){
-              f.addEventListener('submit', allow, true);
-            });
+            // Hook only the główny formularz rezerwacji (bookingForm).
+            // Nie podpinaj się pod wszystkie formularze w panelach administracyjnych, ponieważ powodowało to
+            // konieczność akceptacji polityki prywatności podczas edycji usług.
+            var bookingForm = document.getElementById('bookingForm');
+            if (bookingForm) {
+              bookingForm.addEventListener('submit', allow, true);
+            }
             // Hook clicks on likely booking buttons
             document.addEventListener('click', function(e){
               var btn = e.target.closest('button, input[type=submit], a[role=button]');
