@@ -1,0 +1,3201 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CarTax s.c. - Elektroniczny Warsztat Samochodowy | Gdańsk</title>
+    <meta name="description" content="CarTax s.c. - Specjalistyczny warsztat elektroniczny w Gdańsku. Diagnostyka samochodowa, programowanie sterowników, instalacje taksometrów, kasy fiskalne.">
+    <meta name="keywords" content="diagnostyka samochodowa, programowanie sterowników, taksometry, kasy fiskalne, elektronika samochodowa, Gdańsk">
+    <!-- Firebase SDK Compat Versions -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        nav ul li {
+            margin-left: 2rem;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            cursor: pointer;
+        }
+        nav ul li a:hover {
+            color: #ffd700;
+        }
+        .mobile-menu {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+        }
+        .mobile-menu span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            margin: 3px 0;
+            transition: 0.3s;
+        }
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+        .hero-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(30,60,114,0.8), rgba(42,82,152,0.8));
+        }
+        .hero-shapes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .hero-shape {
+            position: absolute;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+        .hero-shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        .hero-shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+        .hero-shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            bottom: 20%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+        .hero-shape:nth-child(4) {
+            width: 100px;
+            height: 100px;
+            top: 10%;
+            right: 25%;
+            animation-delay: 1s;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            max-width: 800px;
+            padding: 0 2rem;
+            animation: fadeInUp 1s ease-out;
+        }
+        .hero-content .logo-large {
+            font-size: clamp(4rem, 8vw, 8rem);
+            font-weight: 900;
+            margin-bottom: 2rem;
+            background: linear-gradient(45deg, #ffd700, #ffed4a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 5rem;
+        }
+        .hero-content .logo-large img {
+            max-height: clamp(150px, 30vw, 300px);
+            max-width: clamp(300px, 60vw, 600px);
+            object-fit: contain;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+        .hero-tagline {
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+            font-weight: 300;
+            opacity: 0.9;
+        }
+        .hero-description {
+            font-size: 1.1rem;
+            margin-bottom: 2.5rem;
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .hero-stats {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 3rem;
+            z-index: 10;
+        }
+        .stat-item {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffd700;
+            display: block;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            opacity: 0.8;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #ffd700;
+            color: #333;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #ffed4a;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+        .btn-secondary:hover {
+            background: white;
+            color: #333;
+        }
+        /* Services Section */
+        .services {
+            padding: 100px 0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            position: relative;
+        }
+        .services::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(to bottom, rgba(102,126,234,0.1), transparent);
+        }
+        .section-title {
+            text-align: center;
+            font-size: 2.8rem;
+            margin-bottom: 1rem;
+            color: #333;
+            font-weight: 700;
+        }
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 4rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2.5rem;
+            margin-top: 3rem;
+        }
+        .service-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(102,126,234,0.1);
+        }
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: left 0.3s ease;
+        }
+        .service-card:hover::before {
+            left: 0;
+        }
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        .service-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            display: block;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+        .service-card h3 {
+            font-size: 1.6rem;
+            margin-bottom: 1.2rem;
+            color: #333;
+            font-weight: 600;
+        }
+        .service-card p {
+            color: #666;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+        .service-price {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1rem;
+            background: rgba(102,126,234,0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        /* About Section */
+        .about {
+            padding: 80px 0;
+            background: #e9ecef;
+        }
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+        .about-text h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        .about-text p {
+            margin-bottom: 1.5rem;
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.7;
+        }
+        .about-image {
+            height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .about-image iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        /* Contact Section */
+        .contact {
+            padding: 80px 0;
+            background: #e9ecef;
+        }
+        .contact-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+        }
+        .contact-form {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 10px;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .form-group textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        .contact-info h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        .contact-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: #666;
+        }
+        .contact-item i {
+            font-size: 1.2rem;
+            color: #2a5298;
+            margin-right: 1rem;
+            width: 20px;
+        }
+        .map {
+            height: 300px;
+            border-radius: 10px;
+            margin-top: 2rem;
+        }
+        /* Footer */
+        footer {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 3rem 0 1rem;
+        }
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .footer-section h3 {
+            margin-bottom: 1rem;
+            color: #ffd700;
+        }
+        .footer-section p,
+        .footer-section a {
+            color: #ccc;
+            text-decoration: none;
+            line-height: 1.6;
+        }
+        .footer-section a:hover {
+            color: #ffd700;
+        }
+        .footer-bottom {
+            border-top: 1px solid #444;
+            padding-top: 1rem;
+            text-align: center;
+            color: #ccc;
+        }
+        /* Admin Panel Styles */
+        .admin-login,
+        .admin-dashboard {
+            max-width: 600px;
+            margin: 120px auto;
+            padding: 2.5rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        .admin-dashboard {
+            max-width: 1000px;
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .admin-header h2 {
+            color: #333;
+            margin: 0;
+            font-size: 2rem;
+        }
+        .admin-nav {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .admin-nav button {
+            padding: 12px 20px;
+            border: none;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .admin-nav button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        .admin-nav button.active {
+            background: #ffd700;
+            color: #333;
+        }
+        .admin-section {
+            display: none;
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+        .admin-section.active {
+            display: block;
+        }
+        .admin-section h3 {
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        .service-item,
+        .company-info-section {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .service-item h4 {
+            margin-bottom: 1rem;
+            color: #333;
+            font-size: 1.2rem;
+        }
+        .service-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .service-actions button,
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .edit-btn {
+            background: #28a745;
+            color: white;
+        }
+        .edit-btn:hover {
+            background: #218838;
+        }
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+        .delete-btn:hover {
+            background: #c82333;
+        }
+        .add-btn {
+            background: #007bff;
+            color: white;
+            margin-bottom: 1.5rem;
+        }
+        .add-btn:hover {
+            background: #0056b3;
+        }
+        .form-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 2rem;
+        }
+        .form-section h4 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        .firebase-status {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        .firebase-connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .firebase-disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .firebase-config {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 1rem;
+        }
+        .logo-upload-section {
+            background: #e3f2fd;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #90caf9;
+            margin-bottom: 1rem;
+        }
+        .logo-upload-section h5 {
+            color: #1565c0;
+            margin-bottom: 1rem;
+        }
+        .logo-preview {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .logo-preview img {
+            max-width: 150px;
+            max-height: 80px;
+            object-fit: contain;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .logo-current {
+            padding: 0.5rem;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-style: italic;
+            color: #666;
+        }
+        .logo-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .logo-actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .upload-btn {
+            background: #28a745;
+            color: white;
+        }
+        .upload-btn:hover {
+            background: #218838;
+        }
+        .remove-logo-btn {
+            background: #dc3545;
+            color: white;
+        }
+        .firebase-config textarea {
+            width: 100%;
+            height: 120px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        /* Page-specific styles */
+        .page {
+            display: none;
+            padding-top: 80px;
+            min-height: calc(100vh - 80px);
+        }
+        .page.active {
+            display: block;
+        }
+        .page-content {
+            padding: 2rem 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+            .hero-content .logo-large {
+                font-size: clamp(4rem, 8vw, 6rem);
+            }
+            .hero-content .logo-large img {
+                max-height: clamp(150px, 30vw, 225px);
+                max-width: clamp(300px, 60vw, 450px);
+            }
+            .hero-tagline {
+                font-size: 1.2rem;
+            }
+            .hero-description {
+                font-size: 1rem;
+            }
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            .hero-stats {
+                /* Na urządzeniach mobilnych statystyki wyświetlamy poniżej logo i opisu.
+                   Pozycjonowanie absolutne oraz parametry left/bottom są wyłączone. */
+                position: static;
+                transform: none;
+                left: auto;
+                right: auto;
+                bottom: auto;
+                margin-top: 2rem;
+                /* Ustawiamy układ kolumnowy, aby elementy były jedną pod drugą.
+                   Dzięki align-items i justify-content pozycjonowanie jest wyśrodkowane. */
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 1rem;
+            }
+            .hero-stats .stat-item {
+                width: 100%;
+            }
+            .services, .about, .contact {
+                padding: 60px 0;
+            }
+            .services-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            .service-card {
+                padding: 2rem;
+            }
+            nav ul {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: #1e3c72;
+                padding: 1rem 0;
+            }
+            nav ul.active {
+                display: flex;
+            }
+            nav ul li {
+                margin: 0.5rem 0;
+                text-align: center;
+            }
+            .mobile-menu {
+                display: flex;
+            }
+            .about-content,
+            .contact-content {
+                grid-template-columns: 1fr;
+            }
+            .admin-nav {
+                grid-template-columns: 1fr;
+            }
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 5px;
+            }
+            .hero-content .logo-large {
+                font-size: clamp(4rem, 8vw, 5rem);
+            }
+            .hero-content .logo-large img {
+                max-height: clamp(150px, 30vw, 225px);
+                max-width: clamp(300px, 60vw, 450px);
+            }
+            .hero-tagline {
+                font-size: 1rem;
+            }
+            .hero-description {
+                font-size: 0.9rem;
+            }
+            .section-title {
+                font-size: 1.8rem;
+            }
+            .admin-dashboard,
+            .admin-login {
+                margin: 100px 20px;
+                padding: 1.5rem;
+            }
+            .logo {
+                font-size: 1.5rem;
+            }
+            .stat-number {
+                font-size: 1.5rem;
+            }
+            .stat-label {
+                font-size: 0.8rem;
+            }
+        }
+        /* Updated for better mobile responsiveness */
+
+/* Privacy page: full-width dark background */
+#privacy { background: #ffffff; }
+#privacy .container { background: transparent; }
+html.dark #privacy { background: #0b1220; }
+html.dark #privacy .container { background: #0b1220; }
+html.dark #privacy .page-content { background: #0f172a; color: #e5e7eb; border: 1px solid #1f2937; }
+html.dark #privacy a { color: #93c5fd; }
+
+
+/* Privacy page dark mode readability */
+#privacy .page-content { background: #ffffff; color: #1f2937; }
+html.dark #privacy .page-content { background: #0f172a; color: #e5e7eb; border: 1px solid #1f2937; }
+html.dark #privacy a { color: #93c5fd; }
+#privacy h1, #privacy h2 { color: inherit; }
+
+
+/* RODO consent groups */
+#contact #consent-group span, #contact #marketing-group span { color:#555; }
+html.dark #contact #consent-group span, html.dark #contact #marketing-group span { color:#cbd5e1; }
+    </style>
+<style>
+/* --- Custom modifications: adjust logo sizes --- */
+/* Reduce the size of the site logo in the header by 5% */
+.logo {
+    font-size: 1.9rem !important;
+}
+/* Adjust the mobile logo size to maintain the 5% reduction on small screens */
+@media (max-width: 480px) {
+    .logo {
+        font-size: 1.425rem !important;
+    }
+}
+/* Scale down the large hero logo slightly to achieve a ~5% reduction */
+.hero-content .logo-large {
+    transform: scale(0.95);
+}
+.hero-content .logo-large img {
+    transform: scale(0.95);
+}
+</style>
+
+    <style>
+    /* === Dark mode toggle button === */
+    .theme-btn{
+        background: transparent;
+        border: 2px solid rgba(255,255,255,0.8);
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 9999px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform .2s ease, background .2s ease, color .2s ease, border-color .2s ease;
+        margin-left: 1rem;
+        white-space: nowrap;
+    }
+    .theme-btn:hover{ transform: translateY(-1px); }
+    @media (max-width:768px){
+        .theme-btn{ padding: 8px 10px; font-size: 0.9rem; }
+    }
+
+    /* === Dark theme overrides (activated by .dark on <html>) === */
+    html.dark body {
+        background: #0b0f17;
+        color: #e5e7eb;
+    }
+    html.dark header {
+        background: linear-gradient(135deg, #0f172a, #111827);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    }
+    html.dark nav ul li a{ color: #e5e7eb; }
+    html.dark nav ul li a:hover{ color: #ffd700; }
+
+    html.dark .hero{
+        background: linear-gradient(135deg, #0b132b 0%, #1c2541 100%);
+        color: #e5e7eb;
+    }
+    html.dark .hero::before{
+        opacity: 0.15;
+    }
+    html.dark .hero-background{
+        background: linear-gradient(45deg, rgba(15,23,42,0.85), rgba(17,24,39,0.85));
+    }
+
+    /* Sections */
+    html.dark .services{ background: linear-gradient(135deg, #0e1624 0%, #111827 100%); }
+    html.dark .about{ background: #0f172a; }
+    html.dark .contact{ background: #0f172a; }
+    html.dark .section-title{ color: #f3f4f6; }
+    html.dark .section-subtitle{ color: #9ca3af; }
+
+    /* Cards / blocks */
+    html.dark .service-card,
+    html.dark .admin-login,
+    html.dark .admin-dashboard,
+    html.dark .admin-section,
+    html.dark .form-section,
+    html.dark .service-item,
+    html.dark .contact-form,
+    html.dark .company-info-section {
+        background: #0f172a !important;
+        border-color: #1f2937 !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4) !important;
+        color: #e5e7eb !important;
+    }
+    html.dark .service-card p,
+    html.dark .contact-item,
+    html.dark .footer-section p,
+    html.dark .footer-section a{ color: #cbd5e1 !important; }
+
+    /* Inputs */
+    html.dark input[type="text"],
+    html.dark input[type="email"],
+    html.dark input[type="tel"],
+    html.dark input[type="password"],
+    html.dark input[type="color"],
+    html.dark textarea, 
+    html.dark select {
+        background: #0b0f17 !important;
+        color: #e5e7eb !important;
+        border: 1px solid #374151 !important;
+    }
+    html.dark label{ color: #e5e7eb; }
+
+    /* Buttons */
+    html.dark .btn{
+        background: #ffd700;
+        color: #111827;
+        border: none;
+    }
+    html.dark .btn:hover{
+        background: #ffed4a;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+    html.dark .btn.btn-secondary{
+        background: transparent;
+        color: #e5e7eb;
+        border: 2px solid #e5e7eb;
+    }
+    html.dark .btn.btn-secondary:hover{
+        background: #e5e7eb;
+        color: #111827;
+    }
+
+    /* Admin nav buttons */
+    html.dark .admin-nav button{
+        background: #1f2937;
+        color: #e5e7eb;
+    }
+    html.dark .admin-nav button.active{
+        background: #ffd700;
+        color: #111827;
+    }
+
+    /* Footer */
+    html.dark footer{
+        background: linear-gradient(135deg, #0f172a, #111827);
+        color: #cbd5e1;
+    }
+    html.dark .footer-bottom{ border-top-color: #272b36; color: #9ca3af; }
+    html.dark .footer-section h3{ color: #ffd700; }
+
+    /* Booking page iframe wrapper stays neutral */
+    html.dark #booking .page-content{ background: transparent; }
+    </style>
+
+
+<style>
+/* --- Dark mode fixes: Services page + Services section overlay --- */
+html.dark #services{
+    background: linear-gradient(135deg, #0e1624 0%, #111827 100%) !important;
+}
+html.dark #services .page-content{
+    background: transparent !important;
+}
+/* Home "Services" decorative section */
+html.dark .services{
+    background: linear-gradient(135deg, #0e1624 0%, #111827 100%) !important;
+}
+html.dark .services::before{
+    background: none !important;
+    opacity: 0 !important;
+    content: "" !important;
+}
+</style>
+
+
+<style>
+/* --- Dark mode fixes: About, Booking, Contact pages --- */
+
+/* Page backgrounds */
+html.dark #about,
+html.dark #contact,
+html.dark #booking{
+    background: linear-gradient(135deg, #0e1624 0%, #111827 100%) !important;
+}
+
+/* Page content containers should be transparent so gradient is visible */
+html.dark #about .page-content,
+html.dark #contact .page-content,
+html.dark #booking .page-content{
+    background: transparent !important;
+}
+
+/* About page inner blocks */
+html.dark #about .about-content,
+html.dark #about .about-text{
+    background: #0f172a !important;
+    border: 1px solid #1f2937 !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4) !important;
+    color: #e5e7eb !important;
+}
+
+/* Contact page inner blocks */
+html.dark #contact .contact-content,
+html.dark #contact .contact-form,
+html.dark #contact .contact-info{
+    background: #0f172a !important;
+    border: 1px solid #1f2937 !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4) !important;
+    color: #e5e7eb !important;
+}
+html.dark #contact .contact-item i,
+html.dark #contact .contact-item span{
+    color: #cbd5e1 !important;
+}
+
+/* Booking page specifics */
+html.dark #booking-iframe{
+    background: transparent !important;
+}
+/* If booking section has any headers/buttons inside container */
+html.dark #booking h1,
+html.dark #booking p{
+    color: #e5e7eb !important;
+}
+</style>
+
+    <!-- Service Detail Page Styles -->
+    <style>
+        .service-detail {
+            padding: 80px 0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        html.dark .service-detail {
+            background: linear-gradient(135deg, #0e1624 0%, #111827 100%);
+        }
+        .service-detail-content {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 3rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        html.dark .service-detail-content {
+            background: #0f172a;
+            border: 1px solid #1f2937;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            color: #e5e7eb;
+        }
+        .service-detail-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        html.dark .service-detail-header {
+            border-bottom-color: #374151;
+        }
+        .service-detail-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .service-detail-title {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+        html.dark .service-detail-title {
+            color: #f3f4f6;
+        }
+        .service-detail-price {
+            font-size: 1.3rem;
+            color: #667eea;
+            font-weight: 600;
+            background: rgba(102,126,234,0.1);
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            display: inline-block;
+        }
+        .service-detail-description {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin: 2rem 0;
+            color: #555;
+            /*
+             * Long strings provided by users (e.g. without spaces) should not overflow
+             * the content card. Use multiple word breaking strategies to ensure
+             * such strings wrap within their container. See
+             * https://developer.mozilla.org/en-US/docs/Web/CSS/overflow-wrap for details.
+             */
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+        html.dark .service-detail-description {
+            color: #cbd5e1;
+            /* Apply the same word‑wrapping rules in dark mode */
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+        .service-detail-image {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        .service-detail-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 12px 24px;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+        .back-button:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        /* Admin styles for service details */
+        .service-detail-admin {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            margin-top: 1rem;
+        }
+        html.dark .service-detail-admin {
+            background: #0f172a;
+            border-color: #1f2937;
+        }
+        .image-upload-section {
+            background: #e3f2fd;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #90caf9;
+            margin-bottom: 1rem;
+        }
+        html.dark .image-upload-section {
+            background: #1a2332;
+            border-color: #3b82f6;
+        }
+        .image-preview {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .image-preview img {
+            max-width: 200px;
+            max-height: 150px;
+            object-fit: cover;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        .service-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+        /* Responsive */
+        @media (max-width: 768px) {
+            .service-detail-content {
+                padding: 2rem 1.5rem;
+                margin: 0 1rem;
+            }
+            .service-detail-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+
+
+<script>
+  window.CARTAX_PRIVACY_VERSION = "1.0";
+  window.CARTAX_PRIVACY_UPDATED = "2025-08-12";
+</script>
+
+</head>
+    <!-- EmailJS library for contact form -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo" onclick="handleLogoClick()">CarTax</div>
+                <nav>
+                    <ul id="nav-menu">
+                        <li><a onclick="showPage('home')">Strona Główna</a></li>
+                        <li><a onclick="showPage('about')">O Nas</a></li>
+                        <li><a onclick="showPage('services')">Usługi</a></li>
+                        <!-- Dodano identyfikator, aby można było łatwo sterować widocznością sekcji rezerwacji z kodu JS -->
+                        <li id="nav-booking"><a onclick="showPage('booking')">Rezerwacja</a></li>
+                        <li><a onclick="showPage('contact')">Kontakt</a></li>
+                    </ul>
+                    <div class="mobile-menu" onclick="toggleMobileMenu()">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </nav>
+
+                <button id="theme-toggle" class="theme-btn" aria-label="Przełącz tryb jasny/ciemny" title="Tryb jasny/ciemny">🌓</button>
+
+            </div>
+        </div>
+    </header>
+    <!-- Home Page -->
+    <div id="home" class="page active">
+        <section class="hero">
+            <div class="hero-background"></div>
+            <div class="hero-shapes">
+                <div class="hero-shape"></div>
+                <div class="hero-shape"></div>
+                <div class="hero-shape"></div>
+                <div class="hero-shape"></div>
+            </div>
+            <div class="hero-content">
+                <div class="logo-large" id="hero-logo">
+                    <span id="logo-text">CarTax</span>
+                    <img id="logo-image" style="display: none;" alt="CarTax Logo">
+                </div>
+                <div class="hero-tagline">Specjalistyczny warsztat elektroniczny w Gdańsku</div>
+                <div class="hero-description">
+                    Oferujemy kompleksowe usługi w zakresie elektroniki pojazdowej, diagnostyki komputerowej,
+                    programowania sterowników oraz instalacji taksometrów i kas fiskalnych.
+                </div>
+                <div class="hero-buttons">
+                    <a class="btn" onclick="showPage('services')">Nasze Usługi</a>
+                    <a class="btn btn-secondary" onclick="showPage('contact')">Skontaktuj się</a>
+                </div>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="stat-experience">11+</span>
+                    <div class="stat-label">Lat doświadczenia</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="stat-clients">500+</span>
+                    <div class="stat-label">Zadowolonych klientów</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="stat-support">24/7</span>
+                    <div class="stat-label">Wsparcie techniczne</div>
+                </div>
+            </div>
+        </section>
+        <section class="services">
+            <div class="container">
+                <h2 class="section-title">Nasze Główne Usługi</h2>
+                <p class="section-subtitle">Świadczymy profesjonalne usługi w zakresie elektroniki samochodowej z wykorzystaniem najnowszych technologii</p>
+                <div class="services-grid" id="home-services">
+                    <!-- Services will be loaded here -->
+                </div>
+            </div>
+        </section>
+        <section class="about">
+            <div class="container">
+                <div class="about-content">
+                    <div class="about-text">
+                        <h2>CarTax - Twój Partner w Elektronice Samochodowej</h2>
+                        <p id="company-description-home">CarTax to specjalistyczny warsztat elektroniczny w Gdańsku oferujący kompleksowe usługi w zakresie elektroniki pojazdowej, diagnostyki, programowania sterowników, instalacji taksometrów oraz obsługi kas fiskalnych dla taksówek i nie tylko.</p>
+                        <p>Nasza firma została założona w 2014 roku i od tego czasu świadczymy ekspertowskie usługi w dziedzinie elektroniki taksówkowej, urządzeń fiskalnych oraz diagnostyki pojazdów.</p>
+                        <a class="btn" onclick="showPage('about')">Dowiedz się więcej</a>
+                    </div>
+                    <div class="about-image">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2324.905!2d18.6152315!3d54.340261!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46fd74a4f0b5a8b3%3A0xdef123456789!2sB%C5%82o%C5%84ska+25%2F1%2C+80-732+Gda%C5%84sk!5e0!3m2!1sen!2spl!4v1722870000000!5m2!1sen!2spl" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    <!-- About Page -->
+    <div id="about" class="page">
+        <div class="container">
+            <div class="page-content">
+                <h1>O Nas</h1>
+                <div class="about-content">
+                    <div class="about-text" id="about-text">
+                        <!-- Dynamic content will be loaded here -->
+                    </div>
+                    <div class="about-image">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2324.905!2d18.6152315!3d54.340261!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46fd74a4f0b5a8b3%3A0xdef123456789!2sB%C5%82o%C5%84ska+25%2F1%2C+80-732+Gda%C5%84sk!5e0!3m2!1sen!2spl!4v1722870000000!5m2!1sen!2spl" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Services Page -->
+    <div id="services" class="page">
+        <div class="container">
+            <div class="page-content">
+                <h1>Nasze Usługi</h1>
+                <div id="services-list" class="services-grid">
+                    <!-- Services will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Service Detail Page -->
+    <div id="service-detail" class="page">
+        <div class="service-detail">
+            <div class="container">
+                <div class="service-detail-content">
+                    <a href="#" onclick="goBack()" class="back-button">
+                        ← Wstecz
+                    </a>
+                    <div class="service-detail-header">
+                        <div class="service-detail-icon" id="detail-icon">🔧</div>
+                        <h1 class="service-detail-title" id="detail-title">Nazwa usługi</h1>
+                        <div class="service-detail-price" id="detail-price">od 100 zł</div>
+                    </div>
+                    <div class="service-detail-image" id="detail-image-container" style="display: none;">
+                        <img id="detail-image" src="" alt="Zdjęcie usługi">
+                    </div>
+                    <div class="service-detail-description" id="detail-description">
+                        Szczegółowy opis usługi...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Page -->
+    <div id="booking" class="page">
+        <div class="container">
+            <div class="page-content">
+<iframe id="booking-iframe" style="width: 100%; height: 100vh; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+    <!-- Contact Page -->
+    <div id="contact" class="page">
+        <div class="container">
+            <div class="page-content">
+                <h1>Kontakt</h1>
+                <div class="contact-content">
+                    <div class="contact-form">
+                        <h3>Skontaktuj się z nami</h3>
+                        <form id="contact-form">
+                            <div class="form-group">
+                                <label for="name">Imię i nazwisko:</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email:</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Telefon:</label>
+                                <input type="tel" id="phone" name="phone">
+                            </div>
+                            <div class="form-group">
+                                <label for="message">Wiadomość:</label>
+                                <textarea id="message" name="message" required></textarea>
+                            </div>
+                            
+<div class="form-group" id="consent-group">
+  <label style="font-weight:normal; display:flex; gap:.6rem; align-items:flex-start">
+    <input type="checkbox" id="contact-rodo" required style="margin-top:.25rem">
+    <span style="font-size:.92rem; line-height:1.35">
+      Potwierdzam zapoznanie się z
+      <a href="#" onclick="showPage('privacy'); return false;">informacją o przetwarzaniu danych (RODO)</a>
+      i akceptuję zasady opisane w Polityce prywatności.
+    </span>
+  </label>
+</div>
+<button type="submit" class="btn">Wyślij wiadomość</button>
+                        </form>
+                    </div>
+                    <div class="contact-info" id="contact-info">
+                        <h3>Dane kontaktowe</h3>
+                        <div class="contact-item">
+                            <i>📍</i>
+                            <span>Ul. Błońska 25/1<br>80-732 Gdańsk, Poland</span>
+                        </div>
+                        <div class="contact-item">
+                            <i>📞</i>
+                            <span>505 898 692</span>
+                        </div>
+                        <div class="contact-item">
+                            <i>✉️</i>
+                            <span>cartaxgdansk@gmail.com</span>
+                        </div>
+                        <div class="contact-item">
+                            <i>🏢</i>
+                            <span>NIP: 583-316-75-25</span>
+                        </div>
+                   
+                        <div class="map">
+<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2324.905!2d18.6152315!3d54.340261!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46fd74a4f0b5a8b3%3A0xdef123456789!2sB%C5%82o%C5%84ska+25%2F1%2C+80-732+Gda%C5%84sk!5e0!3m2!1sen!2spl!4v1722870000000!5m2!1sen!2spl" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy / RODO Page -->
+    <div id="privacy" class="page">
+      <div class="container">
+        <div class="page-content" style="max-width:900px;margin:0 auto">
+          <h1>Polityka prywatności i informacja o przetwarzaniu danych (RODO)</h1>
+          <p style="margin:.75rem 0 1rem;color:#666">Wersja: <strong id="privacy-version">1.0</strong>, aktualizacja: <strong id="privacy-updated">12.08.2025</strong></p>
+          <h2>Administrator danych</h2>
+          <p>Administratorem danych jest CarTax s.c., ul. Błońska 25/1, 80-732 Gdańsk, e‑mail: <a href="mailto:cartaxgdansk@gmail.com">cartaxgdansk@gmail.com</a>, tel. 505&nbsp;898&nbsp;692.</p>
+          
+          <h2>Zakres i cele przetwarzania</h2>
+          <ul>
+            <li><strong>Formularz kontaktowy:</strong> obsługa zapytań i korespondencji (art. 6 ust. 1 lit. f RODO – prawnie uzasadniony interes polegający na udzieleniu odpowiedzi; alternatywnie art. 6 ust. 1 lit. b, gdy zapytanie zmierza do zawarcia umowy).</li>
+            <li><strong>Rezerwacje:</strong> przyjęcie i obsługa rezerwacji (art. 6 ust. 1 lit. b RODO – działania na żądanie osoby przed zawarciem umowy / realizacja umowy).</li>
+            <li><strong>Marketing bezpośredni (opcjonalny):</strong> na podstawie dobrowolnej zgody (art. 6 ust. 1 lit. a RODO). Zgoda może być w każdym czasie cofnięta bez wpływu na zgodność z prawem przetwarzania sprzed cofnięcia.</li>
+          </ul>
+
+          <h2>Informacje wymagane art. 13 RODO (transparentność)</h2>
+          <ul>
+            <li>Odbiorcy danych: dostawcy usług przetwarzający dane w naszym imieniu – <strong>EmailJS</strong> (obsługa wysyłki e‑mail) i <strong>Google Firebase</strong> (hosting plików/Firestore). Zawarte zostały odpowiednie umowy powierzenia.</li>
+            <li>Przekazywanie poza EOG: EmailJS i Google/Firebase mogą przetwarzać dane poza EOG z zastosowaniem standardowych klauzul umownych (SCC).</li>
+            <li>Okres przechowywania: korespondencja i rezerwacje do 12 miesięcy od zamknięcia sprawy (lub dłużej, jeżeli wymagają tego przepisy rachunkowe/skarbowe); dane marketingowe do czasu cofnięcia zgody.</li>
+            <li>Prawa osoby, której dane dotyczą: dostęp, sprostowanie, ograniczenie, usunięcie, sprzeciw, przenoszenie danych oraz skarga do Prezesa UODO.</li>
+            <li>Podanie danych jest dobrowolne, lecz niezbędne do realizacji wskazanych celów (udzielenie odpowiedzi/rezerwacja). Brak podania danych może uniemożliwić ich realizację.</li>
+          </ul>
+
+          <h2>Podmioty przetwarzające</h2>
+          <ul>
+            <li><strong>EmailJS</strong> – wysyłka wiadomości e‑mail z formularza kontaktowego; polityka prywatności i DPA: <a href="https://www.emailjs.com/legal/privacy-policy/" target="_blank" rel="noopener">emailjs.com/legal/privacy-policy/</a>.</li>
+            <li><strong>Google Firebase</strong> – przechowywanie plików/rekordów (Firestore/Storage); warunki przetwarzania danych i SCC: <a href="https://firebase.google.com/terms/data-processing-terms" target="_blank" rel="noopener">firebase.google.com/terms/data-processing-terms</a>.</li>
+          </ul>
+
+          <h2>Kontakt w sprawach RODO</h2>
+          <p>W sprawach dotyczących ochrony danych prosimy o kontakt na adres e‑mail: <a href="mailto:cartaxgdansk@gmail.com">cartaxgdansk@gmail.com</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Login -->
+    <div id="admin-login" class="page">
+        <div class="admin-login">
+            <h2>Panel Administracyjny</h2>
+            <form id="admin-login-form">
+                <div class="form-group">
+                    <label for="admin-password">Hasło:</label>
+                    <input type="password" id="admin-password" required>
+                </div>
+                <button type="submit" class="btn">Zaloguj</button>
+            </form>
+        </div>
+    </div>
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="page">
+        <div class="admin-dashboard">
+            <div class="admin-header">
+                <h2>Panel Administracyjny CarTax</h2>
+                <button onclick="logout()" class="btn btn-secondary">Wyloguj</button>
+            </div>
+       
+            <div id="firebase-status" class="firebase-status firebase-disconnected">
+                🔴 Firebase rozłączony - dane zapisywane lokalnie
+            </div>
+       
+            <div class="admin-nav">
+                <button class="active" onclick="showAdminSection('services-admin')">Zarządzaj Usługami</button>
+                <button onclick="showAdminSection('company-admin')">Dane Firmy</button>
+                <button onclick="showAdminSection('content-admin')">Edytuj Treść</button>
+                <button onclick="showAdminSection('firebase-admin')">Konfiguracja Firebase</button>
+                <button onclick="showAdminSection('password-admin')">Zmień Hasło</button>
+                <!-- Nowy przycisk do zarządzania rezerwacją -->
+                <button onclick="showAdminSection('booking-admin')">Rezerwacja</button>
+            </div>
+            <!-- Services Management -->
+            <div id="services-admin" class="admin-section active">
+                <h3>Zarządzanie Usługami</h3>
+                <button onclick="showAddServiceForm()" class="action-btn add-btn">➕ Dodaj Nową Usługę</button>
+           
+                <div id="add-service-form" class="hidden form-section">
+    <h4>Dodaj/Edytuj Usługę</h4>
+    <form id="service-form">
+        <input type="hidden" id="service-id">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="service-name">Nazwa usługi:</label>
+                <input type="text" id="service-name" required>
+            </div>
+            <div class="form-group">
+                <label for="service-icon">Ikona (emoji):</label>
+                <input type="text" id="service-icon" placeholder="🔧">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="service-description">Opis (krótki - wyświetlany na liście):</label>
+            <textarea id="service-description" required rows="3"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="service-detailed-description">Szczegółowy opis (wyświetlany na podstronie):</label>
+            <textarea id="service-detailed-description" rows="6" placeholder="Dokładny opis usługi, który zostanie wyświetlony na dedykowanej stronie..."></textarea>
+        </div>
+        <div class="form-group">
+            <label for="service-price">Cena (opcjonalnie):</label>
+            <input type="text" id="service-price" placeholder="np. od 150 zł">
+        </div>
+        <!-- Sekcja zdjęcia -->
+        <div class="image-upload-section">
+            <h5>🖼️ Zdjęcie usługi</h5>
+            <div class="image-preview">
+                <div>
+                    <strong>Aktualne zdjęcie:</strong>
+                    <div id="current-service-image-preview">
+                        Brak zdjęcia
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="service-image-file">Wybierz zdjęcie:</label>
+                <input type="file" id="service-image-file" accept="image/png, image/jpeg, image/webp">
+                <small style="color: #666;">Zalecane formaty: JPG, PNG, WebP. Max 2MB</small>
+            </div>
+            <div class="logo-actions">
+                <button type="button" onclick="previewServiceImage()" class="upload-btn">👁️ Podgląd</button>
+                <button type="button" onclick="saveServiceImage()" class="btn">💾 Zapisz zdjęcie</button>
+                <button type="button" onclick="removeServiceImage()" class="remove-logo-btn">🗑️ Usuń zdjęcie</button>
+            </div>
+        </div>
+        <div style="margin-top: 1rem;">
+            <button type="submit" class="btn">💾 Zapisz</button>
+            <button type="button" onclick="cancelServiceForm()" class="btn btn-secondary">❌ Anuluj</button>
+        </div>
+    </form>
+</div>
+                <div id="services-admin-list">
+                    <!-- Services will be loaded here -->
+                </div>
+            </div>
+            <!-- Company Info Management -->
+            <div id="company-admin" class="admin-section">
+                <h3>Zarządzanie Danymi Firmy</h3>
+                <form id="company-form" class="form-section">
+                    <h4>Logo Firmy</h4>
+                    <div class="logo-upload-section">
+                        <h5>🎨 Zarządzanie Logo</h5>
+                        <div class="logo-preview">
+                            <div>
+                                <strong>Aktualny wygląd:</strong>
+                                <div id="current-logo-preview" class="logo-current">
+                                    Tekst: "CarTax"
+                                </div>
+                            </div>
+                        </div>
+                   
+                        <div class="form-group">
+                            <label for="logo-file">Wybierz plik logo:</label>
+                            <input type="file" id="logo-file" accept="image/png, image/jpeg, image/svg+xml">
+                            <small style="color: #666;">Zalecane formaty: PNG, JPG, SVG. Wymiary: 300x150px</small>
+                        </div>
+                   
+                        <div class="logo-actions">
+                            <button type="button" onclick="previewLogo()" class="upload-btn">👁️ Podgląd</button>
+                            <button type="button" onclick="saveLogo()" class="btn">💾 Zapisz Logo</button>
+                            <button type="button" onclick="removeLogo()" class="remove-logo-btn">🗑️ Usuń Logo</button>
+                        </div>
+                    </div>
+                    <h4>Podstawowe Informacje</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="company-name">Nazwa firmy:</label>
+                            <input type="text" id="company-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="company-nip">NIP:</label>
+                            <input type="text" id="company-nip" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="company-phone">Telefon:</label>
+                            <input type="tel" id="company-phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="company-email">Email:</label>
+                            <input type="email" id="company-email" required>
+                        </div>
+                    </div>
+               
+                    <h4>Adres</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="company-address">Ulica i numer:</label>
+                            <input type="text" id="company-address" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="company-city">Miasto z kodem:</label>
+                            <input type="text" id="company-city" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="company-country">Kraj:</label>
+                            <input type="text" id="company-country" required>
+                        </div>
+                    </div>
+                    <h4>Dodatkowe Informacje</h4>
+                    <div class="form-group">
+                        <label for="company-description">Opis firmy:</label>
+                        <textarea id="company-description" rows="4"></textarea>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="company-hours">Godziny pracy:</label>
+                            <input type="text" id="company-hours" placeholder="Pon-Pt: 8:00-17:00">
+                        </div>
+                        <div class="form-group">
+                            <label for="company-founded">Rok założenia:</label>
+                            <input type="text" id="company-founded" placeholder="2014">
+                        </div>
+                    </div>
+               
+                    <h4>Statystyki (wyświetlane na stronie głównej)</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="company-experience">Lata doświadczenia:</label>
+                            <input type="text" id="company-experience" placeholder="11+">
+                        </div>
+                        <div class="form-group">
+                            <label for="company-clients">Liczba klientów:</label>
+                            <input type="text" id="company-clients" placeholder="500+">
+                        </div>
+                        <div class="form-group">
+                            <label for="company-support">Wsparcie:</label>
+                            <input type="text" id="company-support" placeholder="24/7">
+                        </div>
+                    </div>
+                    <h4>Wygląd Strony</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="body-bg-color">Kolor tła strony:</label>
+                            <input type="color" id="body-bg-color">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">💾 Zapisz Dane Firmy</button>
+                </form>
+            </div>
+            <!-- Content Editing -->
+            <div id="content-admin" class="admin-section">
+                <h3>Edytuj Treść Stron</h3>
+                <form id="content-form" class="form-section">
+                    <h4>Zakładka "O Nas"</h4>
+                    <div class="form-group">
+                        <label for="history-text">Historia CarTax:</label>
+                        <textarea id="history-text" rows="4"></textarea>
+                    </div>
+                    <h4>Nasze Doświadczenie</h4>
+                    <div class="form-group">
+                        <label for="experience-title">Tytuł:</label>
+                        <input type="text" id="experience-title">
+                    </div>
+                    <div class="form-group">
+                        <label for="experience-desc">Opis:</label>
+                        <textarea id="experience-desc" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="experience-list">Lista punktów (każdy w nowej linii):</label>
+                        <textarea id="experience-list" rows="6"></textarea>
+                    </div>
+                    <h4>Dlaczego CarTax?</h4>
+                    <div class="form-group">
+                        <label for="why-title">Tytuł:</label>
+                        <input type="text" id="why-title">
+                    </div>
+                    <div class="form-group">
+                        <label for="why-desc">Opis:</label>
+                        <textarea id="why-desc" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="why-list">Lista punktów (każdy w nowej linii):</label>
+                        <textarea id="why-list" rows="6"></textarea>
+                    </div>
+                    <button type="submit" class="btn">💾 Zapisz Treść</button>
+                </form>
+            </div>
+            <!-- Firebase Configuration -->
+            <div id="firebase-admin" class="admin-section">
+                <h3>Konfiguracja Firebase</h3>
+                <div class="firebase-config">
+                    <h4>Status połączenia:</h4>
+                    <div id="firebase-status-detail" class="firebase-status firebase-disconnected">
+                        🔴 Firebase rozłączony - dane zapisywane lokalnie
+                    </div>
+               
+                    <h4>Konfiguracja Firebase (opcjonalna):</h4>
+                    <p>Firebase automatycznie połączy się przy następnym uruchomieniu. Wklej konfigurację tylko raz:</p>
+                    <textarea id="firebase-config-input" placeholder='{
+  "apiKey": "your-api-key",
+  "authDomain": "your-project.firebaseapp.com",
+  "databaseURL": "https://your-project.firebaseio.com",
+  "projectId": "your-project-id",
+  "storageBucket": "your-project.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "your-app-id"
+}'></textarea>
+                    <button onclick="connectFirebase()" class="btn">🔗 Połącz z Firebase</button>
+                    <button onclick="disconnectFirebase()" class="btn btn-secondary">❌ Rozłącz Firebase</button>
+                </div>
+           
+                <div style="margin-top: 2rem; padding: 1rem; background: #e3f2fd; border-radius: 5px;">
+                    <h4>📋 Instrukcja konfiguracji Firebase:</h4>
+                    <ol style="margin-left: 1.5rem;">
+                        <li>Przejdź do <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a></li>
+                        <li>Kliknij "Dodaj projekt" lub wybierz istniejący</li>
+                        <li>W lewym menu wybierz "Firestore Database"</li>
+                        <li>Kliknij "Utwórz bazę danych"</li>
+                        <li>Wybierz tryb testowy (na początek)</li>
+                        <li>Przejdź do "Ustawienia projektu" (ikona koła zębatego)</li>
+                        <li>Scrolluj w dół do "Twoje aplikacje"</li>
+                        <li>Kliknij ikonę "</>" (Web app)</li>
+                        <li>Nadaj nazwę aplikacji i kliknij "Zarejestruj"</li>
+                        <li>Skopiuj konfigurację (obiekt config) i wklej powyżej</li>
+                    </ol>
+               
+                    <div style="margin-top: 1rem; padding: 1rem; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
+                        <h5>🔐 Bezpieczeństwo:</h5>
+                        <p><strong>Hasło administratora jest teraz szyfrowane!</strong></p>
+                        <ul style="margin-left: 1rem;">
+                            <li>✅ Hasło zapisywane w postaci zaszyfrowanej</li>
+                            <li>✅ Niemożliwe odczytanie hasła z bazy Firebase</li>
+                            <li>✅ Automatyczna migracja starych haseł</li>
+                            <li>🔒 Pamiętaj: Ustaw silne hasło!</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- Password Change -->
+            <div id="password-admin" class="admin-section">
+                <h3>Zmiana Hasła Administratora</h3>
+                <form id="password-change-form" class="form-section">
+                    <div class="form-group">
+                        <label for="old-password">Stare hasło:</label>
+                        <input type="password" id="old-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-password">Nowe hasło:</label>
+                        <input type="password" id="new-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-password">Potwierdź nowe hasło:</label>
+                        <input type="password" id="confirm-password" required>
+                    </div>
+                    <button type="submit" class="btn">🔐 Zmień hasło</button>
+                </form>
+            </div>
+
+            <!-- Rezerwacja Admin Section -->
+            <div id="booking-admin" class="admin-section">
+                <h3>Zarządzanie Rezerwacją</h3>
+                <p>Rezerwacja jest aktualnie: <span id="booking-status"></span></p>
+                
+  <div class="form-group">
+    <label for="booking-color">Kolor akcentu „Rezerwacja”:</label>
+    <input type="color" id="booking-color">
+  </div>
+<button id="toggle-booking-btn" class="btn" onclick="toggleBooking()">Przełącz Rezerwację</button>
+            </div>
+        </div>
+    </div>
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content" id="footer-content">
+                <div class="footer-section">
+                    <h3>CarTax s.c.</h3>
+                    <p>Specjalistyczny warsztat elektroniczny w Gdańsku oferujący kompleksowe usługi w zakresie elektroniki pojazdowej, diagnostyki, programowania sterowników i instalacji taksometrów.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Kontakt</h3>
+                    <p>Ul. Błońska 25/1<br>80-732 Gdańsk, Poland</p>
+                    <p>Tel: 505 898 692</p>
+                    <p>Email: cartaxgdansk@gmail.com</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Informacje</h3>
+                    <p>NIP: 583-316-75-25</p>
+                    <p>Godziny pracy:<br>Pon-Pt: 8:00-17:00<br>Sob: 9:00-14:00</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 CarTax s.c. Wszystkie prawa zastrzeżone. | <a href="#" onclick="showPage('privacy'); return false;" style="color:#999;text-decoration:none;font-size:.9rem">Polityka prywatności</a> | <a href="#admin-login" onclick="showPage('admin-login'); return false;" style="color: #666; text-decoration: none;">⚙️</a></p>
+            </div>
+        </div>
+    </footer>
+    <script>
+        // Data Storage
+        let services = [
+    {
+        id: 1,
+        name: "Diagnostyka Samochodowa",
+        description: "Profesjonalna diagnostyka wszystkich systemów elektronicznych pojazdu przy użyciu najnowszych urządzeń diagnostycznych. Sprawdzamy silnik, skrzynię biegów, ABS, airbagi i inne systemy.",
+        detailedDescription: "Nasza diagnostyka samochodowa to kompleksowa analiza wszystkich systemów elektronicznych w Twoim pojeździe. Wykorzystujemy najnowocześniejsze urządzenia diagnostyczne, które pozwalają nam precyzyjnie zidentyfikować problemy w:\n\n• Systemie zarządzania silnikiem\n• Układzie hamulcowym ABS/ESP\n• Systemach bezpieczeństwa (airbagi)\n• Skrzyni biegów automatycznej\n• Układzie klimatyzacji\n• Systemach komfortu\n\nNasz doświadczony zespół przeprowadzi dokładną analizę i przedstawi Ci jasny raport z wynikami oraz zaleceniami naprawczymi.",
+        price: "od 80 zł",
+        icon: "🔧",
+        imageUrl: ""
+    },
+    {
+        id: 2,
+        name: "Programowanie Sterowników",
+        description: "Kompleksowe programowanie i kodowanie sterowników samochodowych, aktualizacje oprogramowania, adaptacje po wymianie części.",
+        detailedDescription: "Oferujemy profesjonalne usługi programowania sterowników dla wszystkich marek pojazdów. Nasze usługi obejmują:\n\n• Kodowanie nowych sterowników\n• Aktualizacje oprogramowania\n• Adaptacje po wymianie części\n• Programowanie kluczy i pilotów\n• Resetowanie serwisów\n• Kodowanie funkcji dodatkowych\n\nPracujemy z oryginalnymi narzędziami producentów oraz najnowszymi programami diagnostycznymi, co gwarantuje pełną kompatybilność i bezpieczeństwo.",
+        price: "od 150 zł",
+        icon: "💻",
+        imageUrl: ""
+    },
+    {
+        id: 3,
+        name: "Naprawy Sterowników",
+        description: "Profesjonalne naprawy elektronicznych sterowników samochodowych, regeneracja uszkodzonych modułów, wymiana komponentów.",
+        detailedDescription: "Specjalizujemy się w naprawach elektronicznych sterowników samochodowych na poziomie komponentowym. Nasze usługi naprawcze obejmują:\n\n• Diagnostykę uszkodzeń na poziomie elektronicznym\n• Wymianę uszkodzonych komponentów SMD\n• Regenerację ścieżek i połączeń\n• Naprawę uszkodzeń po zalaniu\n• Odtwarzanie oprogramowania\n• Testy funkcjonalne po naprawie\n\nDziałamy z gwarancją jakości i oferujemy znaczne oszczędności w porównaniu do zakupu nowych sterowników.",
+        price: "wycena indywidualna",
+        icon: "🔧",
+        imageUrl: ""
+    },
+    {
+        id: 4,
+        name: "Instalacje Taksometrów",
+        description: "Montaż i serwis taksometrów, kompletne instalacje taksówkowe zgodne z wymogami prawa, legalizacja urządzeń.",
+        detailedDescription: "Jesteśmy autoryzowanym punktem instalacji taksometrów. Świadczymy kompleksowe usługi dla branży taksówkarskiej:\n\n• Instalacja taksometrów homologowanych\n• Legalizacja urządzeń w Urzędzie Miar\n• Instalacja świetlików i oznakowań\n• Montaż drukarek fiskalnych\n• Konfiguracja systemów płatności\n• Serwis i konserwacja urządzeń\n• Pomoc w uzyskaniu licencji\n\nWszystkie instalacje wykonujemy zgodnie z obowiązującymi przepisami i standardami branżowymi.",
+        price: "od 500 zł",
+        icon: "🚕",
+        imageUrl: ""
+    },
+    {
+        id: 5,
+        name: "Kasy Fiskalne i Drukarki",
+        description: "Sprzedaż, instalacja i serwis kas fiskalnych, drukarek fiskalnych, kas systemowych oraz terminali płatniczych.",
+        detailedDescription: "Oferujemy kompleksową obsługę w zakresie urządzeń fiskalnych:\n\n• Sprzedaż kas fiskalnych wszystkich typów\n• Instalacja i konfiguracja urządzeń\n• Szkolenia obsługi kas fiskalnych\n• Serwis i naprawa urządzeń\n• Wymiana rolek i materiałów eksploatacyjnych\n• Fiskalizacja kas\n• Pomoc przy kontrolach skarbowych\n• Terminale płatnicze i systemy POS\n\nPracujemy z renomowanymi producentami kas fiskalnych i zapewniamy pełne wsparcie techniczne.",
+        price: "od 300 zł",
+        icon: "🧾",
+        imageUrl: ""
+    },
+    {
+        id: 6,
+        name: "Elektronika Pojazdowa",
+        description: "Kompleksowe naprawy elektroniki samochodowej, instalacje systemów audio, alarmów, central zamkowych i innych urządzeń elektronicznych.",
+        detailedDescription: "Świadczymy usługi z zakresu elektroniki pojazdowej:\n\n• Naprawy instalacji elektrycznych\n• Instalacje systemów audio i multimedialnych\n• Montaż alarmów i immobilizerów\n• Centrale zamkowe i systemy dostępu\n• Instalacje kamer cofania\n• Systemy parkowania (czujniki, kamery)\n• Oświetlenie LED i xenonowe\n• Diagnostyka problemów elektrycznych\n\nNasz zespół ma wieloletnie doświadczenie w pracy z elektroniką samochodową wszystkich marek pojazdów.",
+        price: "wycena indywidualna",
+        icon: "⚡",
+        imageUrl: ""
+    }
+        ];
+        let companyInfo = {
+            name: "CarTax s.c.",
+            nip: "583-316-75-25",
+            address: "Ul. Błońska 25/1",
+            city: "80-732 Gdańsk",
+            country: "Poland",
+            phone: "505 898 692",
+            email: "cartaxgdansk@gmail.com",
+            description: "Specjalistyczny warsztat elektroniczny w Gdańsku oferujący kompleksowe usługi w zakresie elektroniki pojazdowej, diagnostyki, programowania sterowników i instalacji taksometrów.",
+            workingHours: "Pon-Pt: 8:00-17:00, Sob: 9:00-14:00",
+            founded: "2014",
+            experience: "11+",
+            clients: "500+",
+            support: "24/7",
+            logoUrl: "", // New field for logo URL
+            bodyBgColor: "#f8f9fa"
+        };
+        let aboutContent = {
+            historyText: "CarTax s.c. został założony w 2014 roku jako specjalistyczny warsztat elektroniczny, koncentrujący się na obsłudze branży taksówkarskiej oraz szeroko rozumianej elektronice samochodowej.",
+            experienceTitle: "Nasze Doświadczenie",
+            experienceDesc: "Przez lata naszej działalności zdobyliśmy szerokie doświadczenie w zakresie:",
+            experienceList: [
+                "Diagnostyki komputerowej wszystkich marek pojazdów",
+                "Programowania i kodowania sterowników",
+                "Instalacji i serwisu taksometrów",
+                "Kompleksowych instalacji taksówkowych",
+                "Obsługi kas fiskalnych i terminali płatniczych"
+            ],
+            whyTitle: "Dlaczego CarTax?",
+            whyDesc: "Wybierając nasz warsztat, zyskujesz:",
+            whyList: [
+                "Profesjonalną obsługę i doradztwo",
+                "Nowoczesny sprzęt diagnostyczny",
+                "Konkurencyjne ceny",
+                "Szybki czas realizacji",
+                "Gwarancję na wykonane usługi"
+            ]
+        };
+        let adminPasswordHash = hashPassword("haslo");
+        let isLoggedIn = false;
+        let firebaseApp = null;
+        let db = null;
+        let storage = null;
+        let firebaseConfig = {
+            "apiKey": "AIzaSyADFJk8m8iDsYf740bj9uMRAYZqiY23aC0",
+            "authDomain": "cartax-strona.firebaseapp.com",
+            "projectId": "cartax-strona",
+            "storageBucket": "cartax-strona.firebasestorage.app",
+            "messagingSenderId": "835838323129",
+            "appId": "1:835838323129:web:083ec4f1842802b830ee68",
+            "measurementId": "G-SEPTH7Z2K1"
+        };
+        let firebaseConnected = false;
+        // Enhanced Firebase Manager with auto-reconnect
+        class FirebaseManager {
+            constructor() {
+                this.connected = false;
+                this.config = null;
+            }
+            async initializeFirebase(config) {
+                try {
+                    this.config = config;
+                    firebaseConfig = config;
+                    firebaseApp = firebase.initializeApp(config);
+                    db = firebaseApp.firestore();
+                    storage = firebaseApp.storage();
+                    this.connected = true;
+                    firebaseConnected = true;
+               
+                    // Save config for auto-reconnect
+                    localStorage.setItem('cartax_firebase_config', JSON.stringify(config));
+               
+                    this.updateFirebaseStatus();
+                    console.log('Firebase connected successfully');
+                    return true;
+                } catch (error) {
+                    console.error('Firebase initialization failed:', error);
+                    this.connected = false;
+                    return false;
+                }
+            }
+            async autoReconnect() {
+                try {
+                    const savedConfig = localStorage.getItem('cartax_firebase_config');
+                    if (savedConfig) {
+                        const config = JSON.parse(savedConfig);
+                        await this.initializeFirebase(config);
+                        console.log('Firebase auto-reconnected');
+                        return true;
+                    }
+                } catch (error) {
+                    console.log('Auto-reconnect failed, using local storage');
+                }
+                return false;
+            }
+            disconnect() {
+                this.connected = false;
+                this.config = null;
+                firebaseConnected = false;
+                firebaseConfig = null;
+                firebaseApp = null;
+                db = null;
+                storage = null;
+                localStorage.removeItem('cartax_firebase_config');
+                this.updateFirebaseStatus();
+            }
+            updateFirebaseStatus() {
+                const statusEl = document.getElementById('firebase-status');
+                const statusDetailEl = document.getElementById('firebase-status-detail');
+                const statusText = this.connected ?
+                    '🟢 Firebase połączony - dane synchronizowane' :
+                    '🔴 Firebase rozłączony - dane zapisywane lokalnie';
+                const statusClass = this.connected ? 'firebase-connected' : 'firebase-disconnected';
+           
+                if (statusEl) {
+                    statusEl.className = `firebase-status ${statusClass}`;
+                    statusEl.textContent = statusText;
+                }
+                if (statusDetailEl) {
+                    statusDetailEl.className = `firebase-status ${statusClass}`;
+                    statusDetailEl.textContent = statusText;
+                }
+                // Update Firebase config textarea if config exists
+                const configInput = document.getElementById('firebase-config-input');
+                if (configInput && this.config) {
+                    configInput.value = JSON.stringify(this.config, null, 2);
+                }
+            }
+            async saveData(data) {
+                if (this.connected && db) {
+                    try {
+                        await db.collection('cartax').doc('data').set(data);
+                        console.log('Data saved to Firestore');
+                   
+                        // Also save locally as backup
+                        localStorage.setItem('cartax_data', JSON.stringify(data));
+                        return true;
+                    } catch (error) {
+                        console.error('Firestore save failed, using localStorage:', error);
+                        localStorage.setItem('cartax_data', JSON.stringify(data));
+                        return true;
+                    }
+                } else {
+                    // Fallback to localStorage
+                    localStorage.setItem('cartax_data', JSON.stringify(data));
+                    return true;
+                }
+            }
+            async loadData() {
+                if (this.connected && db) {
+                    try {
+                        const doc = await db.collection('cartax').doc('data').get();
+                        if (doc.exists) {
+                            console.log('Data loaded from Firestore');
+                            return doc.data();
+                        } else {
+                            console.log('No data in Firestore, using localStorage');
+                            const saved = localStorage.getItem('cartax_data');
+                            return saved ? JSON.parse(saved) : null;
+                        }
+                    } catch (error) {
+                        console.error('Firestore load failed, using localStorage:', error);
+                        const saved = localStorage.getItem('cartax_data');
+                        return saved ? JSON.parse(saved) : null;
+                    }
+                } else {
+                    // Fallback to localStorage
+                    const saved = localStorage.getItem('cartax_data');
+                    return saved ? JSON.parse(saved) : null;
+                }
+            }
+        }
+        const firebaseManager = new FirebaseManager();
+        // Logo click counter for admin access
+        // *** UWAGA: usunięto ukrytą funkcjonalność wielokrotnego klikania ***
+        // Kliknięcie w logo przenosi teraz bezpośrednio na stronę główną.
+        // Dostęp do panelu administratora jest realizowany wyłącznie przez ikonę zębatki w stopce.
+        let logoClickCount = 0;
+        let logoClickTimer = null;
+        function handleLogoClick() {
+            // Po prostu pokaż stronę główną
+            showPage('home');
+        }
+        // Navigation Functions
+        function showPage(pageId, push = true) {
+            // Jeżeli użytkownik próbuje przejść do sekcji rezerwacji, a ta jest wyłączona, pokaż komunikat i nie wyświetlaj strony
+            if (pageId === 'booking' && typeof bookingEnabled !== 'undefined' && !bookingEnabled) {
+                alert('Rezerwacja jest aktualnie wyłączona. Można ją włączyć w panelu administratora.');
+                return;
+            }
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.classList.remove('active'));
+
+            document.getElementById(pageId).classList.add('active');
+
+            if (pageId === 'services') {
+                loadServices();
+            }
+            if (pageId === 'about') {
+                updateAboutContent();
+            }
+            // Dodaj obsługę strony service-detail
+            if (pageId === 'service-detail') {
+                // Strona detali jest obsługiwana przez showServiceDetail()
+            }
+
+            
+            // Aktualizacja historii i hash w URL
+            if (push) {
+                const newHash = '#' + pageId;
+                if (location.hash !== newHash) {
+                    history.pushState({ page: pageId }, '', newHash);
+                } else {
+                    history.replaceState({ page: pageId }, '', newHash);
+                }
+            }
+
+            document.getElementById('nav-menu').classList.remove('active');
+        }
+        function toggleMobileMenu() {
+            const navMenu = document.getElementById('nav-menu');
+            navMenu.classList.toggle('active');
+        }
+        // Services Functions
+// Service Detail Functions
+function showServiceDetail(serviceId) {
+    const service = services.find(s => s.id === serviceId);
+    if (!service) return;
+
+    // Wypełnij dane na stronie detali
+    document.getElementById('detail-icon').textContent = service.icon;
+    document.getElementById('detail-title').textContent = service.name;
+    document.getElementById('detail-price').textContent = service.price || 'Wycena indywidualna';
+
+    const description = service.detailedDescription || service.description;
+    document.getElementById('detail-description').innerHTML = description.replace(/\n/g, '<br>');
+
+    const imageContainer = document.getElementById('detail-image-container');
+    const imageElement = document.getElementById('detail-image');
+
+    if (service.imageUrl) {
+        imageElement.src = service.imageUrl;
+        imageElement.alt = service.name;
+        imageContainer.style.display = 'block';
+    } else {
+        imageContainer.style.display = 'none';
+    }
+
+    showPage('service-detail');
+}
+
+function goBack() {
+    const referrer = document.referrer;
+    if (referrer && referrer.includes('#services')) {
+        showPage('services');
+    } else {
+        showPage('home');
+    }
+}
+
+// Service Image Management Functions
+function previewServiceImage() {
+    const fileInput = document.getElementById('service-image-file');
+    const previewDiv = document.getElementById('current-service-image-preview');
+
+    if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        if (file.type.startsWith('image/')) {
+            const localUrl = URL.createObjectURL(file);
+            previewDiv.innerHTML = `<img src="${localUrl}" style="max-width: 200px; max-height: 150px; object-fit: cover; border: 2px solid #ddd; border-radius: 5px;" onload="URL.revokeObjectURL(this.src);">`;
+        } else {
+            previewDiv.innerHTML = '<span style="color: red;">❌ Nieprawidłowy format pliku</span>';
+        }
+    } else {
+        const serviceId = document.getElementById('service-id').value;
+        if (serviceId) {
+            const service = services.find(s => s.id == serviceId);
+            if (service && service.imageUrl) {
+                previewDiv.innerHTML = `<img src="${service.imageUrl}" style="max-width: 200px; max-height: 150px; object-fit: cover; border: 2px solid #ddd; border-radius: 5px;">`;
+            } else {
+                previewDiv.innerHTML = 'Brak zdjęcia';
+            }
+        } else {
+            previewDiv.innerHTML = 'Brak zdjęcia';
+        }
+    }
+}
+
+async function saveServiceImage() {
+    const fileInput = document.getElementById('service-image-file');
+    const serviceId = document.getElementById('service-id').value;
+    const file = fileInput.files[0];
+
+    if (!serviceId) {
+        alert('❌ Najpierw zapisz usługę, a potem dodaj zdjęcie!');
+        return;
+    }
+
+    if (file) {
+        if (!firebaseConnected || !storage) {
+            alert('❌ Aby przesłać zdjęcie, połącz z Firebase!');
+            return;
+        }
+        if (!file.type.startsWith('image/')) {
+            alert('❌ Proszę wybrać plik obrazu (PNG, JPG, WebP).');
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            alert('❌ Plik jest za duży. Maksymalny rozmiar to 2MB.');
+            return;
+        }
+
+        try {
+            const storageRef = storage.ref('services/' + serviceId + '_' + Date.now() + '_' + file.name);
+            const snapshot = await storageRef.put(file);
+            const url = await snapshot.ref.getDownloadURL();
+
+            const service = services.find(s => s.id == serviceId);
+            if (service) {
+                service.imageUrl = url;
+                await saveData();
+                updateServiceImagePreview();
+                fileInput.value = '';
+                alert('✅ Zdjęcie zostało przesłane pomyślnie!');
+            }
+        } catch (error) {
+            console.error('Błąd przesyłania zdjęcia:', error);
+            alert('❌ Błąd podczas przesyłania zdjęcia: ' + error.message);
+        }
+    } else {
+        alert('❌ Proszę wybrać plik zdjęcia do przesłania.');
+    }
+}
+
+function removeServiceImage() {
+    const serviceId = document.getElementById('service-id').value;
+    if (!serviceId) {
+        alert('❌ Najpierw wybierz usługę!');
+        return;
+    }
+
+    if (confirm('Czy na pewno chcesz usunąć zdjęcie?')) {
+        const service = services.find(s => s.id == serviceId);
+        if (service) {
+            service.imageUrl = '';
+            saveData();
+            updateServiceImagePreview();
+            alert('✅ Zdjęcie zostało usunięte.');
+        }
+    }
+}
+
+function updateServiceImagePreview() {
+    const serviceId = document.getElementById('service-id').value;
+    const previewDiv = document.getElementById('current-service-image-preview');
+
+    if (serviceId) {
+        const service = services.find(s => s.id == serviceId);
+        if (service && service.imageUrl) {
+            previewDiv.innerHTML = `<img src="${service.imageUrl}" style="max-width: 200px; max-height: 150px; object-fit: cover; border: 2px solid #ddd; border-radius: 5px;" onerror="this.style.display='none'; this.nextSibling.style.display='block';" onload="this.nextSibling.style.display='none';"><span style="color: red; display: none;">❌ Błąd ładowania obrazu</span>`;
+        } else {
+            previewDiv.innerHTML = 'Brak zdjęcia';
+        }
+    } else {
+        previewDiv.innerHTML = 'Brak zdjęcia';
+    }
+}
+        function loadServices() {
+    const servicesList = document.getElementById('services-list');
+    const homeServices = document.getElementById('home-services');
+
+    // Clear both containers
+    if (servicesList) servicesList.innerHTML = '';
+    if (homeServices) homeServices.innerHTML = '';
+
+    services.forEach((service, index) => {
+        const serviceCard = document.createElement('div');
+        serviceCard.className = 'service-card fade-in';
+        serviceCard.style.animationDelay = `${index * 0.1}s`;
+        serviceCard.onclick = () => showServiceDetail(service.id);
+        serviceCard.innerHTML = `
+            <div class="service-icon">${service.icon}</div>
+            <h3>${service.name}</h3>
+            <p>${service.description}</p>
+            ${service.price ? `<div class="service-price">${service.price}</div>` : ''}
+        `;
+
+        if (servicesList) {
+            const listCard = serviceCard.cloneNode(true);
+            listCard.onclick = () => showServiceDetail(service.id);
+            servicesList.appendChild(listCard);
+        }
+        if (homeServices) {
+            const homeCard = serviceCard.cloneNode(true);
+            homeCard.onclick = () => showServiceDetail(service.id);
+            homeServices.appendChild(homeCard);
+        }
+    });
+        }
+        function loadAdminServices() {
+            const adminList = document.getElementById('services-admin-list');
+            adminList.innerHTML = '';
+       
+            services.forEach(service => {
+                const serviceItem = document.createElement('div');
+                serviceItem.className = 'service-item';
+                serviceItem.innerHTML = `
+                    <h4>${service.icon} ${service.name}</h4>
+                    <p>${service.description}</p>
+                    ${service.price ? `<p><strong>Cena:</strong> ${service.price}</p>` : ''}
+                    <div class="service-actions">
+                        <button class="edit-btn" onclick="editService(${service.id})">✏️ Edytuj</button>
+                        <button class="delete-btn" onclick="deleteService(${service.id})">🗑️ Usuń</button>
+                    </div>
+                `;
+                adminList.appendChild(serviceItem);
+            });
+        }
+        function showAddServiceForm() {
+            document.getElementById('add-service-form').classList.remove('hidden');
+            document.getElementById('service-form').reset();
+            document.getElementById('service-id').value = '';
+        }
+        function cancelServiceForm() {
+            document.getElementById('add-service-form').classList.add('hidden');
+            document.getElementById('service-form').reset();
+        }
+        function editService(id) {
+            const service = services.find(s => s.id === id);
+            if (service) {
+                document.getElementById('service-id').value = service.id;
+                document.getElementById('service-name').value = service.name;
+                document.getElementById('service-description').value = service.description;
+                document.getElementById('service-detailed-description').value = service.detailedDescription || '';
+                document.getElementById('service-price').value = service.price || '';
+                document.getElementById('service-icon').value = service.icon;
+                document.getElementById('service-image-file').value = '';
+                document.getElementById('add-service-form').classList.remove('hidden');
+                updateServiceImagePreview();
+            }
+        }
+        function deleteService(id) {
+            if (confirm('Czy na pewno chcesz usunąć tę usługę?')) {
+                services = services.filter(s => s.id !== id);
+                loadAdminServices();
+                loadServices();
+                saveData();
+            }
+        }
+
+        // ====================
+        // Zarządzanie rezerwacją
+        // ====================
+        // Stan włączenia sekcji rezerwacji zapisywany jest w localStorage.  Domyślnie sekcja jest ukryta.
+        let bookingEnabled = localStorage.getItem('bookingEnabled') === 'true';
+
+        
+let bookingColor = localStorage.getItem('bookingColor') || '#ffd700';
+/**
+         * Aktualizuje widoczność linku do rezerwacji w menu oraz treści w panelu administracyjnym.
+         */
+        function updateBookingVisibility() {
+            const navBooking = document.getElementById('nav-booking');
+            const bookingStatus = document.getElementById('booking-status');
+            const toggleBtn = document.getElementById('toggle-booking-btn');
+            if (navBooking) {
+                // Ukryj lub pokaż element nawigacji w zależności od statusu
+                navBooking.style.display = bookingEnabled ? '' : 'none';
+            }
+            if (bookingStatus) {
+                bookingStatus.textContent = bookingEnabled ? 'aktywna' : 'wyłączona';
+            }
+            if (toggleBtn) {
+                toggleBtn.textContent = bookingEnabled ? 'Dezaktywuj Rezerwację' : 'Aktywuj Rezerwację';
+            }
+        }
+
+        /**
+         * Przełącza stan rezerwacji i zapisuje go w localStorage.
+         */
+        function toggleBooking() {
+            bookingEnabled = !bookingEnabled;
+            localStorage.setItem('bookingEnabled', bookingEnabled);
+            updateBookingVisibility();
+            try { saveData(); } catch(_) {}
+        }
+
+        // Po załadowaniu dokumentu zaktualizuj stan rezerwacji
+        document.addEventListener('DOMContentLoaded', updateBookingVisibility);
+        try { updateBookingVisibility(); } catch(_) {}
+
+        // Admin Functions
+        function showAdminSection(sectionId) {
+            const sections = document.querySelectorAll('.admin-section');
+            sections.forEach(section => section.classList.remove('active'));
+       
+            document.getElementById(sectionId).classList.add('active');
+       
+            const buttons = document.querySelectorAll('.admin-nav button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+       
+            if (sectionId === 'services-admin') {
+                loadAdminServices();
+            } else if (sectionId === 'company-admin') {
+                loadCompanyForm();
+            } else if (sectionId === 'content-admin') {
+                loadContentForm();
+            } else if (sectionId === 'firebase-admin') {
+                firebaseManager.updateFirebaseStatus();
+            }
+         else if (sectionId === 'booking-admin') {
+                try { updateBookingVisibility(); } catch(_) {}
+                try { const __inp = document.getElementById('booking-color'); if (__inp) __inp.value = bookingColor || (localStorage.getItem('bookingColor') || '#ffd700'); } catch(_) {}
+                try { refreshBookingIframe(); } catch(_) {}
+            }
+        }
+        function loadCompanyForm() {
+            document.getElementById('company-name').value = companyInfo.name;
+            document.getElementById('company-nip').value = companyInfo.nip;
+            document.getElementById('company-phone').value = companyInfo.phone;
+            document.getElementById('company-email').value = companyInfo.email;
+            document.getElementById('company-address').value = companyInfo.address;
+            document.getElementById('company-city').value = companyInfo.city;
+            document.getElementById('company-country').value = companyInfo.country;
+            document.getElementById('company-description').value = companyInfo.description;
+            document.getElementById('company-hours').value = companyInfo.workingHours;
+            document.getElementById('company-founded').value = companyInfo.founded;
+            document.getElementById('company-experience').value = companyInfo.experience;
+            document.getElementById('company-clients').value = companyInfo.clients;
+            document.getElementById('company-support').value = companyInfo.support;
+            document.getElementById('body-bg-color').value = companyInfo.bodyBgColor;
+            document.getElementById('logo-file').value = '';
+            updateLogoPreview();
+        }
+        function loadContentForm() {
+            document.getElementById('history-text').value = aboutContent.historyText;
+            document.getElementById('experience-title').value = aboutContent.experienceTitle;
+            document.getElementById('experience-desc').value = aboutContent.experienceDesc;
+            document.getElementById('experience-list').value = aboutContent.experienceList.join('\n');
+            document.getElementById('why-title').value = aboutContent.whyTitle;
+            document.getElementById('why-desc').value = aboutContent.whyDesc;
+            document.getElementById('why-list').value = aboutContent.whyList.join('\n');
+        }
+        function previewLogo() {
+            const fileInput = document.getElementById('logo-file');
+            const previewDiv = document.getElementById('current-logo-preview');
+       
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                if (file.type.startsWith('image/')) {
+                    const localUrl = URL.createObjectURL(file);
+                    previewDiv.innerHTML = `<img src="${localUrl}" style="max-width: 150px; max-height: 80px; object-fit: contain; border: 2px solid #ddd; border-radius: 5px;" onload="URL.revokeObjectURL(this.src);">`;
+                } else {
+                    previewDiv.innerHTML = '<span style="color: red;">❌ Nieprawidłowy format pliku</span>';
+                }
+            } else if (companyInfo.logoUrl) {
+                previewDiv.innerHTML = `<img src="${companyInfo.logoUrl}" style="max-width: 150px; max-height: 80px; object-fit: contain; border: 2px solid #ddd; border-radius: 5px;" onerror="this.style.display=\'none\'; this.nextSibling.style.display=\'block\';" onload="this.nextSibling.style.display=\'none\';"><span style="color: red; display: none;">❌ Błąd ładowania obrazu</span>`;
+            } else {
+                previewDiv.innerHTML = 'Tekst: "CarTax"';
+            }
+        }
+        async function saveLogo() {
+            const fileInput = document.getElementById('logo-file');
+            const file = fileInput.files[0];
+       
+            if (file) {
+                if (!firebaseConnected || !storage) {
+                    alert('❌ Aby przesłać logo, połącz z Firebase!');
+                    return;
+                }
+                if (!file.type.startsWith('image/')) {
+                    alert('❌ Proszę wybrać plik obrazu (PNG, JPG, SVG).');
+                    return;
+                }
+           
+                try {
+                    const storageRef = storage.ref('logos/' + Date.now() + '_' + file.name);
+                    const snapshot = await storageRef.put(file);
+                    const url = await snapshot.ref.getDownloadURL();
+               
+                    companyInfo.logoUrl = url;
+                    await saveData();
+                    updateLogoDisplay();
+                    updateLogoPreview();
+                    fileInput.value = '';
+                    alert('✅ Logo zostało przesłane do Firebase i zapisane pomyślnie!');
+                } catch (error) {
+                    console.error('Błąd przesyłania logo:', error);
+                    alert('❌ Błąd podczas przesyłania logo: ' + error.message);
+                }
+            } else {
+                alert('❌ Proszę wybrać plik logo do przesłania.');
+            }
+        }
+        function removeLogo() {
+            if (confirm('Czy na pewno chcesz usunąć logo? Zostanie przywrócony tekst "CarTax".')) {
+                companyInfo.logoUrl = '';
+                saveData();
+                updateLogoDisplay();
+                updateLogoPreview();
+                alert('✅ Logo zostało usunięte.');
+            }
+        }
+        function updateLogoDisplay() {
+            const logoText = document.getElementById('logo-text');
+            const logoImage = document.getElementById('logo-image');
+       
+            if (companyInfo.logoUrl) {
+                logoText.style.display = 'none';
+                logoImage.style.display = 'block';
+                logoImage.src = companyInfo.logoUrl;
+                logoImage.onerror = function() {
+                    // If image fails to load, show text
+                    logoText.style.display = 'block';
+                    logoImage.style.display = 'none';
+                };
+            } else {
+                logoText.style.display = 'block';
+                logoImage.style.display = 'none';
+            }
+        }
+        function updateLogoPreview() {
+            const previewDiv = document.getElementById('current-logo-preview');
+       
+            if (companyInfo.logoUrl) {
+                previewDiv.innerHTML = `<img src="${companyInfo.logoUrl}" style="max-width: 150px; max-height: 80px; object-fit: contain; border: 2px solid #ddd; border-radius: 5px;" onerror="this.style.display='none'; this.nextSibling.style.display='block';" onload="this.nextSibling.style.display='none';"><span style="color: red; display: none;">❌ Błąd ładowania obrazu</span>`;
+            } else {
+                previewDiv.innerHTML = 'Tekst: "CarTax"';
+            }
+        }
+        function connectFirebase() {
+            const configInput = document.getElementById('firebase-config-input').value.trim();
+            try {
+                let config;
+           
+                // Try to parse as JSON first
+                try {
+                    config = JSON.parse(configInput);
+                } catch (jsonError) {
+                    // If JSON fails, try to evaluate as JavaScript object
+                    try {
+                        config = eval('(' + configInput + ')');
+                    } catch (evalError) {
+                        throw new Error('Invalid format');
+                    }
+                }
+           
+                // Validate required fields
+                const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket'];
+                for (let field of requiredFields) {
+                    if (!config[field]) {
+                        throw new Error(`Missing required field: ${field}`);
+                    }
+                }
+           
+                firebaseManager.initializeFirebase(config);
+                alert('✅ Firebase został połączony pomyślnie!\n\nKonfiguracja zostanie automatycznie przywrócona przy następnym uruchomieniu.');
+                saveData();
+            } catch (error) {
+                alert('❌ Błąd konfiguracji Firebase: ' + error.message + '\n\nSprawdź czy wszystkie klucze są w cudzysłowach i czy składnia jest poprawna.');
+            }
+        }
+        function disconnectFirebase() {
+            firebaseManager.disconnect();
+            document.getElementById('firebase-config-input').value = '';
+            alert('Firebase został rozłączony. Konfiguracja została usunięta.');
+            saveData();
+        }
+        function updateWebsiteContent() {
+            // Update hero stats
+            document.getElementById('stat-experience').textContent = companyInfo.experience;
+            document.getElementById('stat-clients').textContent = companyInfo.clients;
+            document.getElementById('stat-support').textContent = companyInfo.support;
+            // Update footer
+            const footerContent = document.getElementById('footer-content');
+            if (footerContent) {
+                footerContent.innerHTML = `
+                    <div class="footer-section">
+                        <h3>${companyInfo.name}</h3>
+                        <p>${companyInfo.description}</p>
+                    </div>
+                    <div class="footer-section">
+                        <h3>Kontakt</h3>
+                        <p>${companyInfo.address}<br>${companyInfo.city}, ${companyInfo.country}</p>
+                        <p>Tel: ${companyInfo.phone}</p>
+                        <p>Email: ${companyInfo.email}</p>
+                    </div>
+                    <div class="footer-section">
+                        <h3>Informacje</h3>
+                        <p>NIP: ${companyInfo.nip}</p>
+                        <p>Godziny pracy:<br>${companyInfo.workingHours}</p>
+                    </div>
+                `;
+            }
+            // Update contact page
+            const contactInfo = document.getElementById('contact-info');
+            if (contactInfo) {
+                contactInfo.innerHTML = `
+                    <h3>Dane kontaktowe</h3>
+                    <div class="contact-item">
+                        <i>📍</i>
+                        <span>${companyInfo.address}<br>${companyInfo.city}, ${companyInfo.country}</span>
+                    </div>
+                    <div class="contact-item">
+                        <i>📞</i>
+                        <span>${companyInfo.phone}</span>
+                    </div>
+                    <div class="contact-item">
+                        <i>✉️</i>
+                        <span>${companyInfo.email}</span>
+                    </div>
+                    <div class="contact-item">
+                        <i>🏢</i>
+                        <span>NIP: ${companyInfo.nip}</span>
+                    </div>
+                    <div class="map">
+<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2324.905!2d18.6152315!3d54.340261!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46fd74a4f0b5a8b3%3A0xdef123456789!2sB%C5%82o%C5%84ska+25%2F1%2C+80-732+Gda%C5%84sk!5e0!3m2!1sen!2spl!4v1722870000000!5m2!1sen!2spl" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                `;
+            }
+            // Update company description on home page
+            const companyDescHome = document.getElementById('company-description-home');
+            if (companyDescHome) {
+                companyDescHome.textContent = companyInfo.description;
+            }
+            // Update logo display
+            updateLogoDisplay();
+            // Update body background color
+            document.body.style.backgroundColor = companyInfo.bodyBgColor;
+        }
+        function updateAboutContent() {
+            const aboutText = document.getElementById('about-text');
+            if (aboutText) {
+                aboutText.innerHTML = `
+                    <h2>Historia CarTax</h2>
+                    <p>${aboutContent.historyText}</p>
+                    <h3>${aboutContent.experienceTitle}</h3>
+                    <p>${aboutContent.experienceDesc}</p>
+                    <ul style="margin: 1rem 0; padding-left: 2rem;">
+                        ${aboutContent.experienceList.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                    <h3>${aboutContent.whyTitle}</h3>
+                    <p>${aboutContent.whyDesc}</p>
+                    <ul style="margin: 1rem 0; padding-left: 2rem;">
+                        ${aboutContent.whyList.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                `;
+            }
+        }
+        function logout() {
+            isLoggedIn = false;
+            showPage('home');
+        }
+        // Password hashing function (simple hash for demo)
+        function hashPassword(password) {
+            let hash = 0;
+            for (let i = 0; i < password.length; i++) {
+                const char = password.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            return hash.toString();
+        }
+        // Enhanced Data Management with password hashing
+        async function saveData() {
+            const data = {
+                services: services,
+                adminPasswordHash: adminPasswordHash, // Save hashed password
+                companyInfo: companyInfo,
+                aboutContent: aboutContent,
+                firebaseConfig: firebaseConfig
+            };
+            // Include booking settings in saved data
+            try { data.booking = { enabled: bookingEnabled, color: bookingColor }; } catch(_) {}
+
+       
+            try {
+                await firebaseManager.saveData(data);
+                console.log('Data saved successfully');
+            } catch (error) {
+                console.error('Error saving data:', error);
+            }
+        }
+        async function loadData() {
+            try {
+                // First try to auto-reconnect Firebase
+                await firebaseManager.autoReconnect();
+           
+                // Then load data
+                const data = await firebaseManager.loadData();
+                if (data) {
+                    if (data.booking) {
+                        bookingEnabled = !!data.booking.enabled;
+                        bookingColor = data.booking.color || '#ffd700';
+                        try { localStorage.setItem('bookingEnabled', bookingEnabled); localStorage.setItem('bookingColor', bookingColor); } catch(_) {}
+                    }
+
+                    if (data.services) services = data.services;
+                    // Load hashed password
+                    if (data.adminPasswordHash) {
+                        adminPasswordHash = data.adminPasswordHash;
+                    } else if (data.adminPassword) {
+                        // Migrate old plain text password
+                        adminPasswordHash = hashPassword(data.adminPassword);
+                    }
+                    if (data.companyInfo) companyInfo = data.companyInfo;
+                    if (data.aboutContent) aboutContent = data.aboutContent;
+                } else {
+                    // If no data, set default hash
+                    adminPasswordHash = hashPassword("haslo");
+                }
+                updateWebsiteContent();
+                updateAboutContent();
+                try { updateBookingVisibility(); } catch(_) {}
+                const __bc = (typeof bookingColor !== 'undefined' && bookingColor) ? bookingColor : (localStorage.getItem('bookingColor') || '#ffd700');
+                try { const __inp = document.getElementById('booking-color'); if (__inp) __inp.value = __bc; } catch(_) {}
+                try { refreshBookingIframe(); } catch(_) {}
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+        // Enhanced password verification
+        function verifyPassword(inputPassword) {
+            return hashPassword(inputPassword) === adminPasswordHash;
+        }
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', async function() {
+            firebaseManager.initializeFirebase(firebaseConfig);
+            await loadData();
+            loadServices();
+            updateAboutContent();
+       
+            
+            // Initialize EmailJS for contact form
+            emailjs.init('oauFkFfwe4Cbewgrn');
+            // Contact form submission with RODO consent & Firestore log
+            (function(){ 
+              const form = document.getElementById('contact-form');
+              if(!form) return;
+              const submitBtn = form.querySelector('button[type="submit"]');
+              const rodo = document.getElementById('contact-rodo');
+              function toggleSubmit(){ if(submitBtn && rodo) submitBtn.disabled = !rodo.checked; }
+              toggleSubmit(); rodo && rodo.addEventListener('change', toggleSubmit);
+
+              form.addEventListener('submit', async function(e){
+                e.preventDefault();
+                if(!rodo || !rodo.checked){ alert('Aby wysłać wiadomość, potwierdź zapoznanie się z informacją RODO.'); return; }
+                const name = document.getElementById('name').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+                const message = document.getElementById('message').value.trim();
+                const timestamp = new Date().toISOString();
+
+                const templateParams = {
+                    from_name: name,
+                    from_email: email,
+                    phone: phone,
+                    message: message,
+                    consent_policy: 'TAK',
+                    policy_version: '1.0',
+                    policy_updated: '2025-08-12',
+                    to_email: 'cartaxgdansk@gmail.com'
+                };
+                try {
+                    await emailjs.send('service_CarTax', 'template_wj644m4', templateParams);
+                } catch(err) {
+                    console.error('Błąd wysyłania wiadomości:', err);
+                    alert('Wystąpił błąd podczas wysyłania wiadomości. Spróbuj ponownie później.');
+                    return;
+                }
+                // Try to log in Firestore for audyt
+                try {
+                    if (window.firebase && firebase.apps && firebase.apps.length) {
+                        const db = firebase.firestore();
+                        await db.collection('contact_messages').add({
+                            name, email, phone, message,
+                            consent_policy: true,
+
+                            policy_version: '1.0',
+                            policy_updated: '2025-08-12',
+                            policy_url: window.location.href.split('#')[0] + '#privacy',
+                            created_at: timestamp,
+                            user_agent: navigator.userAgent || ''
+                        });
+                    }
+                } catch(e) { console.warn('Nie udało się zapisać zgody w Firebase:', e); }
+
+                alert('Dziękujemy, wiadomość została wysłana!');
+                this.reset();
+                toggleSubmit();
+              }, { once: true });
+            })();
+
+            // Admin login with enhanced security
+            document.getElementById('admin-login-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const password = document.getElementById('admin-password').value;
+                if (verifyPassword(password)) {
+                    isLoggedIn = true;
+                    showPage('admin-dashboard');
+                    loadAdminServices();
+                    firebaseManager.updateFirebaseStatus();
+                } else {
+                    alert('Nieprawidłowe hasło!');
+                }
+            });
+       
+            // Service form
+            document.getElementById('service-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+           
+                const id = document.getElementById('service-id').value;
+                const name = document.getElementById('service-name').value;
+                const description = document.getElementById('service-description').value;
+                const detailedDescription = document.getElementById('service-detailed-description').value;
+                const price = document.getElementById('service-price').value;
+                const icon = document.getElementById('service-icon').value;
+
+                if (id) {
+                    // Edit existing service
+                    const service = services.find(s => s.id == id);
+                    if (service) {
+                        service.name = name;
+                        service.description = description;
+                        service.detailedDescription = detailedDescription;
+                        service.price = price;
+                        service.icon = icon;
+                    }
+                } else {
+                    // Add new service
+                    const newId = Math.max(...services.map(s => s.id)) + 1;
+                    services.push({
+                        id: newId,
+                        name: name,
+                        description: description,
+                        detailedDescription: detailedDescription,
+                        price: price,
+                        icon: icon,
+                        imageUrl: ''
+                    });
+                }
+
+                saveData();
+                loadAdminServices();
+                loadServices();
+                cancelServiceForm();
+                alert('✅ Usługa została zapisana!');
+            });
+            // Company form
+            document.getElementById('company-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+           
+                companyInfo.name = document.getElementById('company-name').value;
+                companyInfo.nip = document.getElementById('company-nip').value;
+                companyInfo.phone = document.getElementById('company-phone').value;
+                companyInfo.email = document.getElementById('company-email').value;
+                companyInfo.address = document.getElementById('company-address').value;
+                companyInfo.city = document.getElementById('company-city').value;
+                companyInfo.country = document.getElementById('company-country').value;
+                companyInfo.description = document.getElementById('company-description').value;
+                companyInfo.workingHours = document.getElementById('company-hours').value;
+                companyInfo.founded = document.getElementById('company-founded').value;
+                companyInfo.experience = document.getElementById('company-experience').value;
+                companyInfo.clients = document.getElementById('company-clients').value;
+                companyInfo.support = document.getElementById('company-support').value;
+                companyInfo.bodyBgColor = document.getElementById('body-bg-color').value;
+           
+                // Note: Logo is saved separately via saveLogo() function
+           
+                saveData();
+                updateWebsiteContent();
+                alert('✅ Dane firmy zostały zaktualizowane!');
+            });
+       
+            // Content form
+            document.getElementById('content-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+           
+                aboutContent.historyText = document.getElementById('history-text').value;
+                aboutContent.experienceTitle = document.getElementById('experience-title').value;
+                aboutContent.experienceDesc = document.getElementById('experience-desc').value;
+                aboutContent.experienceList = document.getElementById('experience-list').value.split('\n').filter(line => line.trim() !== '');
+                aboutContent.whyTitle = document.getElementById('why-title').value;
+                aboutContent.whyDesc = document.getElementById('why-desc').value;
+                aboutContent.whyList = document.getElementById('why-list').value.split('\n').filter(line => line.trim() !== '');
+           
+                saveData();
+                updateAboutContent();
+                alert('✅ Treść została zaktualizowana!');
+            });
+       
+            // Password change form
+            document.getElementById('password-change-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+           
+                const oldPassword = document.getElementById('old-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+           
+                if (!verifyPassword(oldPassword)) {
+                    alert('❌ Nieprawidłowe stare hasło!');
+                    return;
+                }
+           
+                if (newPassword !== confirmPassword) {
+                    alert('❌ Nowe hasła nie są identyczne!');
+                    return;
+                }
+           
+                if (newPassword.length < 4) {
+                    alert('❌ Nowe hasło musi mieć co najmniej 4 znaki!');
+                    return;
+                }
+           
+                adminPasswordHash = hashPassword(newPassword);
+                saveData();
+                alert('✅ Hasło zostało zmienione pomyślnie!');
+                this.reset();
+            });
+        });
+        // Check for admin access in URL
+        if (window.location.hash === '#admin') {
+            showPage('admin-login');
+        }
+        // Animation on scroll
+        function animateOnScroll() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                const elementVisible = 150;
+           
+                if (elementTop < window.innerHeight - elementVisible) {
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }
+            });
+        }
+        window.addEventListener('scroll', animateOnScroll);
+        setTimeout(animateOnScroll, 100);
+    </script>
+<script>
+const bookingHtmlGzipBase64 = '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';
+async function decodeGzipBase64(gzipBase64String) {
+    const binaryString = atob(gzipBase64String.replace(/\s+/g, ''));
+    const bytes = Uint8Array.from(binaryString, c => c.charCodeAt(0));
+    const ds = new DecompressionStream('gzip');
+    const decompressed = new Response(new Blob([bytes]).stream().pipeThrough(ds));
+    const text = await decompressed.text();
+    return text;
+}
+document.addEventListener('DOMContentLoaded', async () => {
+    const iframe = document.getElementById('booking-iframe');
+    if (iframe) {
+        try {
+            const html = await decodeGzipBase64(bookingHtmlGzipBase64);
+            iframe.srcdoc = html;
+        } catch (e) {
+            console.error(e);
+        }
+    }
+});
+
+        // --- Historia przeglądarki (Wstecz/Dalej) + start z hash ---
+        window.addEventListener('popstate', (event) => {
+            const target = (event.state && event.state.page) ? event.state.page : (location.hash ? location.hash.substring(1) : 'home');
+            if (document.getElementById(target)) {
+                showPage(target, false);
+            }
+        });
+        document.addEventListener('DOMContentLoaded', () => {
+            const initial = location.hash ? location.hash.substring(1) : 'home';
+            if (document.getElementById(initial)) {
+                showPage(initial, false);
+            } else {
+                showPage('home', false);
+            }
+        });
+</script>
+
+<script>
+
+function hexToRgbString(hex) {
+  const n = hex.replace('#','');
+  const bigint = parseInt(n.length === 3 ? n.split('').map(c => c+c).join('') : n, 16);
+  const r = (bigint >> 16) & 255, g = (bigint >> 8) & 255, b = bigint & 255;
+  return `rgb(${r}, ${g}, ${b})`;
+}
+function lightenHex(hex, percent) {
+  const n = hex.replace('#','');
+  const bigint = parseInt(n.length === 3 ? n.split('').map(c => c+c).join('') : n, 16);
+  let r = (bigint >> 16) & 255, g = (bigint >> 8) & 255, b = bigint & 255;
+  const f = 1 + percent/100;
+  r = Math.min(255, Math.round(r*f));
+  g = Math.min(255, Math.round(g*f));
+  b = Math.min(255, Math.round(b*f));
+  return '#'+[r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+}
+function darkenHex(hex, percent) {
+  const n = hex.replace('#','');
+  const bigint = parseInt(n.length === 3 ? n.split('').map(c => c+c).join('') : n, 16);
+  let r = (bigint >> 16) & 255, g = (bigint >> 8) & 255, b = bigint & 255;
+  const f = 1 - percent/100;
+  r = Math.max(0, Math.round(r*f));
+  g = Math.max(0, Math.round(g*f));
+  b = Math.max(0, Math.round(b*f));
+  return '#'+[r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+}
+/** Podmienia odcienie "złota/pomarańczy" używane w widgetcie na wybrany kolor i jego warianty */
+function applyBookingColor(html, baseHex) {
+  const hoverHex = darkenHex(baseHex, 12);     // ciemniejszy wariant do hover/active
+  const borderHex = darkenHex(baseHex, 18);    // ramki
+  const textHex = darkenHex(baseHex, 25);      // ciemny tekst na tle ostrzeżeń
+  const rgb = hexToRgbString(baseHex);
+
+  return html
+    // wcześniejsze próby
+    .replace(/#ffd700/gi, baseHex)
+    .replace(/#ffed4a/gi, hoverHex)
+    .replace(/rgb\(\s*255\s*,\s*215\s*,\s*0\s*\)/gi, rgb)
+    .replace(/#ffc107/gi, baseHex)
+    .replace(/#ffcc00/gi, baseHex)
+
+    // aktualne odcienie w osadzonym HTML
+    .replace(/#f39c12/gi, baseHex)   // główny akcent
+    .replace(/#e67e22/gi, hoverHex)  // ciemniejszy (hover/active)
+    .replace(/#b8860b/gi, textHex)   // ciemny złoty dla tekstu
+    .replace(/#996f0a/gi, borderHex) // jeszcze ciemniejsze ramki
+    .replace(/#856404/gi, borderHex)
+
+    // delikatne tła ostrzeżeń zostawiamy (#fff3cd), ale jeśli chcesz - też możemy je modyfikować
+    ;
+}
+
+
+
+
+async function refreshBookingIframe() {
+  const iframe = document.getElementById('booking-iframe');
+  if (!iframe) return;
+  try {
+    const original = await decodeGzipBase64(bookingHtmlGzipBase64);
+    const color = (typeof bookingColor !== 'undefined' && bookingColor) ? bookingColor : (localStorage.getItem('bookingColor') || '#ffd700');
+    let html = applyBookingColor(original, color);
+
+    // Inject inline RODO checkbox next to the "Zarezerwuj termin" button
+    html = html.replace('</body>', `
+      <style>
+        #rodo-inline-wrap { display:inline-flex; gap:.5rem; align-items:flex-start; margin-left:.75rem; }
+        #rodo-inline-wrap span { font-size:.92rem; line-height:1.35; }
+        @media (max-width: 640px) {
+          #rodo-inline-wrap { display:flex; margin-left:0; margin-top:.5rem; }
+        }
+      </style>
+      <script>
+        (function(){
+          function findReserveButton(){
+            var btns = Array.from(document.querySelectorAll('button, input[type=submit], a[role=button]'));
+            // Look for visible element containing "zarezerwuj" (case-insensitive) in text/value
+            return btns.find(function(b){
+              var txt = (b.textContent || b.value || '').trim().toLowerCase();
+              return /zarezerwuj/.test(txt) || /zarezerwuj termin/.test(txt);
+            }) || null;
+          }
+          function ensureInlineConsent(btn){
+            if(!btn) return;
+            if (document.getElementById('booking-rodo-inline')) return;
+            var wrap = document.createElement('label');
+            wrap.id = 'rodo-inline-wrap';
+            wrap.style.fontWeight = 'normal';
+            wrap.innerHTML = '<input type="checkbox" id="booking-rodo-inline" style="margin-top:.2rem">'
+              + '<span>Akceptuję <a href="'
+              + (window.location !== window.parent.location ? document.referrer.split("#")[0] + "#privacy" : (window.location.href.split("#")[0] + "#privacy"))
+              + '" target="_blank" rel="noopener">Politykę prywatności</a></span>';
+            // Place immediately after button
+            if (btn.insertAdjacentElement) { btn.insertAdjacentElement('afterend', wrap); }
+            else { btn.parentNode && btn.parentNode.appendChild(wrap); }
+          }
+          function guardSubmits(){
+            var ok = document.getElementById('booking-rodo-inline');
+            function allow(ev){
+              // Always requery in case of dynamic rerenders
+              ok = document.getElementById('booking-rodo-inline');
+              if(!ok || !ok.checked){
+                ev.preventDefault();
+                alert('Aby kontynuować rezerwację, zaznacz akceptację Polityki prywatności.');
+                return false;
+              }
+            }
+            // Hook forms
+            Array.from(document.querySelectorAll('form')).forEach(function(f){
+              f.addEventListener('submit', allow, true);
+            });
+            // Hook clicks on likely booking buttons
+            document.addEventListener('click', function(e){
+              var btn = e.target.closest('button, input[type=submit], a[role=button]');
+              if(!btn) return;
+              var txt = (btn.textContent || btn.value || '').trim().toLowerCase();
+              if(/zarezerwuj/.test(txt)){
+                ok = document.getElementById('booking-rodo-inline');
+                if(!ok || !ok.checked){
+                  e.preventDefault();
+                  alert('Aby kontynuować rezerwację, zaznacz akceptację Polityki prywatności.');
+                  return false;
+                }
+              }
+            }, true);
+          }
+          function init(){
+            var btn = findReserveButton();
+            if (btn) { ensureInlineConsent(btn); guardSubmits(); }
+          }
+          // Run after DOM ready and also after small delay for dynamic content
+          document.addEventListener('DOMContentLoaded', init);
+          setTimeout(init, 50);
+          setTimeout(init, 500);
+        })();
+      <\/script>
+    </body>`);
+
+    iframe.srcdoc = html;
+  } catch (e) { console.error(e); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // init picker value if present
+  const input = document.getElementById('booking-color');
+  if (input) input.value = (typeof bookingColor !== 'undefined' && bookingColor) ? bookingColor : (localStorage.getItem('bookingColor') || '#ffd700');
+
+  // live update booking color
+  document.addEventListener('input', (e) => {
+    if (e.target && e.target.id === 'booking-color') {
+      const val = e.target.value;
+      window.bookingColor = val;
+      try { localStorage.setItem('bookingColor', val); } catch(_) {}
+      refreshBookingIframe();
+    }
+  });
+
+  // ensure iframe content uses selected color (run after other loaders)
+  setTimeout(refreshBookingIframe, 0);
+});
+
+// also sync picker when navigating to booking-admin
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const attr = btn.getAttribute('onclick') || '';
+  if (attr.includes("showAdminSection('booking-admin')")) {
+    const input = document.getElementById('booking-color');
+    if (input) input.value = (typeof bookingColor !== 'undefined' && bookingColor) ? bookingColor : (localStorage.getItem('bookingColor') || '#ffd700');
+  }
+});
+</script>
+
+
+<script>
+(function(){
+  function applyTheme(theme){
+    const root = document.documentElement;
+    if(theme === 'dark'){
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }
+  function getPreferredTheme(){
+    const saved = localStorage.getItem('cartax_theme');
+    if(saved){ return saved; }
+    // system preference fallback
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  // Initialize
+  const initial = getPreferredTheme();
+  applyTheme(initial);
+
+  // Hook up button (may not exist yet if DOM not parsed; wait DOMContentLoaded)
+  document.addEventListener('DOMContentLoaded', function(){
+    const btn = document.getElementById('theme-toggle');
+    if(btn){
+      // Update icon according to state
+      btn.textContent = (document.documentElement.classList.contains('dark')) ? '☀️' : '🌓';
+      btn.addEventListener('click', function(){
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('cartax_theme', isDark ? 'dark' : 'light');
+        btn.textContent = isDark ? '☀️' : '🌓';
+      });
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
