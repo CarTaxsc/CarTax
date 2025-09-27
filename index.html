@@ -2090,7 +2090,7 @@ html.dark #booking p{
             async saveData(data) {
                 if (this.connected && db) {
                     try {
-                        await db.collection('cartax').doc('data').set(data);
+                        await db.collection('cartax').doc('data').set(data, { merge: true });
                         console.log('Data saved to Firestore');
                    
                         // Also save locally as backup
@@ -2777,9 +2777,79 @@ let bookingColor = localStorage.getItem('bookingColor') || '#ffd700';
                 const data = await firebaseManager.loadData();
                 if (data) {
                     if (data.booking) {
-                        bookingEnabled = !!data.booking.enabled;
-                        bookingColor = data.booking.color || '#ffd700';
-                        try { localStorage.setItem('bookingEnabled', bookingEnabled); localStorage.setItem('bookingColor', bookingColor); } catch(_) {}
+                        // Last-writer-wins between Firestore and localStorage for booking settings
+                        const fs = data.booking || {};
+                        const fsTs = (fs && typeof fs.updatedAt !== 'undefined')
+                            ? (typeof fs.updatedAt === 'number'
+                                ? fs.updatedAt
+                                : (fs.updatedAt && typeof fs.updatedAt.toMillis === 'function'
+                                    ? fs.updatedAt.toMillis()
+                                    : (fs.updatedAt && typeof fs.updatedAt.seconds !== 'undefined'
+                                        ? (fs.updatedAt.seconds * 1000 + Math.floor((fs.updatedAt.nanoseconds || 0) / 1e6))
+                                        : 0)))
+                            : 0;
+                        let lsEnabled = (localStorage.getItem('bookingEnabled') === 'true');
+                        let lsColor = localStorage.getItem('bookingColor') || '#ffd700';
+                        let lsTs = parseInt(localStorage.getItem('bookingUpdatedAt') || '0', 10) || 0;
+                        const useLocal = lsTs > fsTs;
+                        if (useLocal) {
+                            bookingEnabled = !!lsEnabled;
+                            bookingColor = lsColor;
+                        } else {
+                            bookingEnabled = !!fs.enabled;
+                            bookingColor = fs.color || '#ffd700';
+                            lsTs = fsTs || Date.now();
+                        }
+                        try {
+                            localStorage.setItem('bookingEnabled', String(bookingEnabled));
+                            localStorage.setItem('bookingColor', bookingColor);
+                            localStorage.setItem('bookingUpdatedAt', String(lsTs));
+                        } catch(_) {}
+                        // If local newer, push to Firestore to sync
+                        if (useLocal && window.db && typeof window.db.collection === 'function') {
+                            try{
+                                await window.db.collection('cartax').doc('data').set({
+                                    booking: {
+                                        enabled: bookingEnabled,
+                                        color: bookingColor,
+                                        updatedAt: (window.firebase && firebase.firestore && firebase.firestore.FieldValue
+                                            ? firebase.firestore.FieldValue.serverTimestamp()
+                                            : lsTs)
+                                    }
+                                }, { merge: true });
+                                console.log('[PATCH] LWW push booking to Firestore');
+                            }catch(err){
+                                console.warn('[PATCH] LWW push failed', err);
+                            }
+                        }
+                    } else {
+                        // No booking data in Firestore: initialize from local and push
+                        let lsEnabled = (localStorage.getItem('bookingEnabled') === 'true');
+                        let lsColor = localStorage.getItem('bookingColor') || '#ffd700';
+                        let lsTs = parseInt(localStorage.getItem('bookingUpdatedAt') || '0', 10) || Date.now();
+                        bookingEnabled = !!lsEnabled;
+                        bookingColor = lsColor;
+                        try {
+                            localStorage.setItem('bookingEnabled', String(bookingEnabled));
+                            localStorage.setItem('bookingColor', bookingColor);
+                            localStorage.setItem('bookingUpdatedAt', String(lsTs));
+                        } catch(_) {}
+                        if (window.db && typeof window.db.collection === 'function') {
+                            try{
+                                await window.db.collection('cartax').doc('data').set({
+                                    booking: {
+                                        enabled: bookingEnabled,
+                                        color: bookingColor,
+                                        updatedAt: (window.firebase && firebase.firestore && firebase.firestore.FieldValue
+                                            ? firebase.firestore.FieldValue.serverTimestamp()
+                                            : lsTs)
+                                    }
+                                }, { merge: true });
+                                console.log('[PATCH] init booking saved to Firestore');
+                            }catch(err){
+                                console.warn('[PATCH] init booking save failed', err);
+                            }
+                        }
                     }
 
                     if (data.services) services = data.services;
@@ -3299,6 +3369,103 @@ document.addEventListener('click', (e) => {
   });
 })();
 </script>
+
+
+<!-- PATCH: persist booking enabled/color to Firestore + override toggleBooking (v5-merge-write) -->
+<script>
+(function(){
+  function __getBookingEnabled(){
+    try { return (typeof bookingEnabled !== 'undefined') ? !!bookingEnabled : !!window.bookingEnabled; } catch(_){ return !!window.bookingEnabled; }
+  }
+  function __setBookingEnabled(v){
+    try { if (typeof bookingEnabled !== 'undefined') bookingEnabled = !!v; } catch(_) {}
+    window.bookingEnabled = !!v;
+    try { localStorage.setItem('bookingEnabled', String(!!v)); } catch(_) {}
+  }
+  function __getBookingColor(){
+    try { if (typeof bookingColor !== 'undefined' && bookingColor) return bookingColor; } catch(_) {}
+    if (typeof window.bookingColor !== 'undefined' && window.bookingColor) return window.bookingColor;
+    var el = document.getElementById('booking-color');
+    if (el && el.value) return el.value;
+    try { var ls = localStorage.getItem('bookingColor'); if (ls) return ls; } catch(_) {}
+    return '#ffd700';
+  }
+  function __setBookingColor(val){
+    try { if (typeof bookingColor !== 'undefined') bookingColor = val; } catch(_) {}
+    window.bookingColor = val;
+    try { localStorage.setItem('bookingColor', val); } catch(_) {}
+  }
+
+  async function __writeBookingMerge(){
+    // Prefer direct Firestore merge to avoid stale overwrites
+    try{
+      if (window.db && typeof window.db.collection === 'function') {
+        var payload = { booking: { enabled: __getBookingEnabled(), color: __getBookingColor(), updatedAt: (window.firebase && firebase.firestore && firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : Date.now()) } };
+        await window.db.collection('cartax').doc('data').set(payload, { merge: true });
+        // Update local backup to match
+        try{
+          var backup = {};
+          try{ backup = JSON.parse(localStorage.getItem('cartax_data') || '{}'); }catch(_){}
+          backup.booking = payload.booking;
+          localStorage.setItem('cartax_data', JSON.stringify(backup));
+        }catch(_){}
+        console.log('[PATCH] Booking saved with merge');
+        return true;
+      }
+    }catch(err){
+      console.warn('[PATCH] Firestore merge failed', err);
+    }
+    // Fallback: use firebaseManager.saveData with merge-like behavior
+    try{
+      var mgr = window.firebaseManager;
+      var current = {};
+      if(mgr && typeof mgr.loadData === 'function'){
+        current = await mgr.loadData() || {};
+      }else{
+        try{ current = JSON.parse(localStorage.getItem('cartax_data') || '{}'); }catch(_){ current = {}; }
+      }
+      current.booking = { enabled: __getBookingEnabled(), color: __getBookingColor() };
+      if(mgr && typeof mgr.saveData === 'function'){
+        await mgr.saveData(current);
+        console.log('[PATCH] Booking saved via manager fallback');
+        return true;
+      }
+    }catch(err){
+      console.warn('[PATCH] Manager fallback failed', err);
+    }
+    // Last resort: local only
+    try{
+      var b = {};
+      try{ b = JSON.parse(localStorage.getItem('cartax_data') || '{}'); }catch(_){ b = {}; }
+      b.booking = { enabled: __getBookingEnabled(), color: __getBookingColor() };
+      localStorage.setItem('cartax_data', JSON.stringify(b));
+      console.log('[PATCH] Booking saved locally only');
+      return true;
+    }catch(_){}
+    return false;
+  }
+
+  window.toggleBooking = async function(){
+    __setBookingEnabled(!__getBookingEnabled()); try{ localStorage.setItem('bookingUpdatedAt', String(Date.now())); }catch(_){}
+    if(typeof window.updateBookingVisibility === 'function'){ window.updateBookingVisibility(); }
+    try{ await __writeBookingMerge(); }catch(_){}
+  };
+
+  let __bookingSaveTimer;
+  document.addEventListener('input', function(e){
+    const t = e.target;
+    if(t && t.id === 'booking-color'){
+      const val = t.value;
+      __setBookingColor(val);
+      try{ localStorage.setItem('bookingUpdatedAt', String(Date.now())); }catch(_){}
+      if(typeof window.refreshBookingIframe === 'function'){ window.refreshBookingIframe(); }
+      clearTimeout(__bookingSaveTimer);
+      __bookingSaveTimer = setTimeout(function(){ __writeBookingMerge().catch(()=>{}); }, 300);
+    }
+  });
+})();
+</script>
+
 
 </body>
 </html>
